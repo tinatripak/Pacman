@@ -2,12 +2,8 @@ import pygame
 from pygame import *
 import pygame.mixer as mixer
 import pdb
-from enum import Enum
 
-black_colour = (0, 0, 0)
-white_colour = (255, 255, 255)
-violet_colour = (66, 49, 137)
-red_colour = (255, 0, 0)
+from const import black_colour, violet_colour, white_colour, DirectionState
 
 screen = pygame.display.set_mode((900, 604))
 pygame.display.set_caption('Pac-Man')
@@ -60,13 +56,6 @@ def first_map(sprites_list):
         wall_list.add(wall)
         sprites_list.add(wall)
     return wall_list
-
-
-class DirectionState(Enum):
-    right = 1
-    left = 2
-    up = 3
-    down = 4
 
 
 # TODO Create walls
@@ -384,17 +373,17 @@ def finish_game(message, left, sprites_list, dots_list, ghosts_list, pacman_list
                     start_game()
 
         # TODO Window output: win or loss
-        window = pygame.Surface((300, 150))
+        window = pygame.Surface((300, 170))
         window.set_alpha(10)
         window.fill((255, 0, 0))
-        screen.blit(window, (140, 220))
+        screen.blit(window, (160, 220))
 
         text1 = font.render(message, True, (255, 246, 212))
         screen.blit(text1, [left, 233])
         text2 = font.render("ENTER to PLAY again", True, (255, 246, 212))
-        screen.blit(text2, [142, 303])
+        screen.blit(text2, [180, 303])
         text3 = font.render("ESC to FINISH this game", True, (255, 246, 212))
-        screen.blit(text3, [142, 333])
+        screen.blit(text3, [180, 333])
 
         pygame.display.flip()
         clock.tick(10)
