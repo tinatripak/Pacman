@@ -37,20 +37,20 @@ def notepad_to_array(path, array):
 
 
 directions_of_pinky = []
-notepad_to_array("C:/Users/Кристина/Desktop/Pinky_directions.txt", directions_of_pinky)
+notepad_to_array("Pinky_directions.txt", directions_of_pinky)
 directions_of_blinky = []
-notepad_to_array("C:/Users/Кристина/Desktop/Blinky_directions.txt", directions_of_blinky)
+notepad_to_array("Blinky_directions.txt", directions_of_blinky)
 directions_of_inky = []
-notepad_to_array("C:/Users/Кристина/Desktop/Inky_directions.txt", directions_of_inky)
+notepad_to_array("Inky_directions.txt", directions_of_inky)
 directions_of_clyde = []
-notepad_to_array("C:/Users/Кристина/Desktop/Clyde_directions.txt", directions_of_clyde)
+notepad_to_array("Clyde_directions.txt", directions_of_clyde)
 
 
 def first_map(sprites_list):
     wall_list = pygame.sprite.RenderPlain()
     walls = []
     # x, y, width, height
-    notepad_to_array("C:/Users/Кристина/Desktop/Map.txt", walls)
+    notepad_to_array("Map.txt", walls)
     for i in walls:
         wall = Walls(i[0], i[1], i[2], i[3], violet_colour)
         wall_list.add(wall)
@@ -159,11 +159,11 @@ class Ghosts(Player):
             return [0, 0]
 
 
-path_pacman_img = "C:/Users/Кристина/Desktop/Pacman.png"
+path_pacman_img = "pacman.png"
 pygame.init()
 clock = pygame.time.Clock()
 pygame.font.init()
-font = pygame.font.Font("C:/Users/Кристина/Desktop/trocchi.ttf", 20)
+font = pygame.font.Font("trocchi.ttf", 20)
 pacman_img = pygame.image.load(path_pacman_img)
 
 
@@ -179,10 +179,10 @@ def start_game():
     pink_steps = blinky_steps = inky_steps = clyde_steps = 0
 
     pacman = Player(287, 439, path_pacman_img)
-    blinky = Ghosts(287, 199, "C:/Users/Кристина/Desktop/2469740-blinky.png")
-    pinky = Ghosts(287, 259, "C:/Users/Кристина/Desktop/2469744-pinky.png")
-    inky = Ghosts(255, 259, "C:/Users/Кристина/Desktop/2469741-inky.png")
-    clyde = Ghosts(319, 259, "C:/Users/Кристина/Desktop/2469743-clyde.png")
+    blinky = Ghosts(287, 199, "ghosts/2469740-blinky.png")
+    pinky = Ghosts(287, 259, "ghosts/2469744-pinky.png")
+    inky = Ghosts(255, 259, "ghosts/2469741-inky.png")
+    clyde = Ghosts(319, 259, "ghosts/2469743-clyde.png")
 
     sprites_list.add(pacman)
     pacman_list.add(pacman)
