@@ -1,29 +1,33 @@
+import pdb
 import pygame
 from pygame import *
-import pygame.mixer as mixer
-import pdb
+from const import black_colour, violet_colour, white_colour, DirectionState, SCREEN_SIZE, path_pacman_img, font
+from player import Player
+from walls import Walls
+from ghosts import Ghosts
+from dots import Dots
 
-from const import black_colour, violet_colour, white_colour, DirectionState
-
-screen = pygame.display.set_mode((900, 604))
+screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption('Pac-Man')
-
 board = pygame.image.load("pacman_startgame.png")
-
 board1 = board.get_rect(
     bottomright=(800, 500))
 screen.blit(board, board1)
-
 pygame.display.update()
-pygame.init()
-mixer.music.load('pacman_beginning.wav')
-mixer.music.play()
 
-key_pressed = False
-while not key_pressed:
-    for event in pygame.event.get():
-        if event.type == KEYDOWN and event.key == K_RETURN:
-            key_pressed = True
+
+def start_music():
+    pygame.init()
+    mixer.music.load('pacman_beginning.wav')
+    mixer.music.play()
+    key_pressed = False
+    while not key_pressed:
+        for event_ in pygame.event.get():
+            if event_.type == KEYDOWN and event_.key == K_RETURN:
+                key_pressed = True
+
+
+start_music()
 
 
 def notepad_to_array(path, array):
@@ -36,13 +40,10 @@ def notepad_to_array(path, array):
             array.append(temp)
 
 
-directions_of_pinky = []
+directions_of_pinky = directions_of_blinky = directions_of_inky = directions_of_clyde = []
 notepad_to_array("Pinky_directions.txt", directions_of_pinky)
-directions_of_blinky = []
 notepad_to_array("Blinky_directions.txt", directions_of_blinky)
-directions_of_inky = []
 notepad_to_array("Inky_directions.txt", directions_of_inky)
-directions_of_clyde = []
 notepad_to_array("Clyde_directions.txt", directions_of_clyde)
 
 
@@ -58,18 +59,6 @@ def first_map(sprites_list):
     return wall_list
 
 
-# TODO Create walls
-class Walls(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, colour):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([width, height])
-        self.image.fill(colour)
-        # rectangle
-        self.rect = self.image.get_rect()
-        self.rect.left = x
-        self.rect.top = y
-
-
 def spawn_setup(sprites_list):
     spawn = pygame.sprite.RenderPlain()
     spawn.add(Walls(281, 242, 44, 3, white_colour))
@@ -77,93 +66,9 @@ def spawn_setup(sprites_list):
     return spawn
 
 
-# TODO Create dots
-class Dots(pygame.sprite.Sprite):
-    def __init__(self, width, height):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.Surface([width, height])
-        self.image.fill((255, 255, 0))
-        self.rect = self.image.get_rect()
-
-
-# TODO Create Pacman
-class Player(pygame.sprite.Sprite):
-    change_x = 0
-    change_y = 0
-    playerLives = 3
-
-    def __init__(self, x, y, filename):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(filename)
-        self.rect = self.image.get_rect()
-        self.rect.top = y
-        self.rect.left = x
-        self.prev_x = x
-        self.prev_y = y
-
-    def change_speed_player(self, x, y):
-        if self.rect.x > 587:
-            self.rect.x = 17
-        if self.rect.x < 17:
-            self.rect.x = 587
-        self.change_x += x
-        self.change_y += y
-
-    def clear_speed_player(self):
-        self.prev_x = self.change_x
-        self.prev_y = self.change_y
-
-    def new_position_player(self, walls, spawn):
-        old_x = self.rect.left
-        new_x = old_x + self.change_x
-        self.rect.left = new_x
-        old_y = self.rect.top
-        new_y = old_y + self.change_y
-
-        x_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
-        if x_sprite_collide:
-            self.rect.left = old_x
-        else:
-            self.rect.top = new_y
-            y_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
-            if y_sprite_collide:
-                self.rect.top = old_y
-
-        if spawn:
-            spawn_sprite_collide = pygame.sprite.spritecollide(self, spawn, False)
-            if spawn_sprite_collide:
-                self.rect.left = old_x
-                self.rect.top = old_y
-
-
-# TODO Create Ghosts
-class Ghosts(Player):
-    def change_speed_ghost(self, list_, ghost, turn, steps, l):
-        try:
-            if steps < list_[turn][2]:
-                self.change_x = list_[turn][0]
-                self.change_y = list_[turn][1]
-                steps += 1
-            else:
-                if turn < l:
-                    turn += 1
-                elif ghost == "clyde":
-                    turn = 2
-                else:
-                    turn = 0
-                self.change_x = list_[turn][0]
-                self.change_y = list_[turn][1]
-                steps = 0
-            return [turn, steps]
-        except IndexError:
-            return [0, 0]
-
-
-path_pacman_img = "pacman.png"
 pygame.init()
 clock = pygame.time.Clock()
 pygame.font.init()
-font = pygame.font.Font("trocchi.ttf", 20)
 pacman_img = pygame.image.load(path_pacman_img)
 
 
