@@ -1,33 +1,13 @@
 import pdb
 import pygame
 from pygame import *
-from const import black_colour, violet_colour, white_colour, DirectionState, SCREEN_SIZE, path_pacman_img, font
+from const import black_colour, violet_colour, white_colour, \
+    DirectionState, SCREEN_SIZE, path_pacman_img, foundation_map
 from player import Player
 from walls import Walls
 from ghosts import Ghosts
 from dots import Dots
-
-screen = pygame.display.set_mode(SCREEN_SIZE)
-pygame.display.set_caption('Pac-Man')
-board = pygame.image.load("pacman_startgame.png")
-board1 = board.get_rect(
-    bottomright=(800, 500))
-screen.blit(board, board1)
-pygame.display.update()
-
-
-def start_music():
-    pygame.init()
-    mixer.music.load('pacman_beginning.wav')
-    mixer.music.play()
-    key_pressed = False
-    while not key_pressed:
-        for event_ in pygame.event.get():
-            if event_.type == KEYDOWN and event_.key == K_RETURN:
-                key_pressed = True
-
-
-start_music()
+import random
 
 
 def notepad_to_array(path, array):
@@ -40,18 +20,74 @@ def notepad_to_array(path, array):
             array.append(temp)
 
 
-directions_of_pinky = directions_of_blinky = directions_of_inky = directions_of_clyde = []
-notepad_to_array("Pinky_directions.txt", directions_of_pinky)
-notepad_to_array("Blinky_directions.txt", directions_of_blinky)
-notepad_to_array("Inky_directions.txt", directions_of_inky)
-notepad_to_array("Clyde_directions.txt", directions_of_clyde)
+def generator_blocks(f, n, x1, x2, y1, y2, width, height):
+    for i in range(n):
+        number1 = (random.randrange(x1, x2, 30))
+        number2 = (random.randrange(y1, y2, 30))
+        f.writelines(f"{number1},{number2},{width},{height}\n")
+
+
+def create_mapgenerated(f, width, height):
+    generator_blocks(f, 4, 30, 364, 30, 150, width, height)
+    generator_blocks(f, 2, 370, 580, 30, 180, width, height)
+    generator_blocks(f, 2, 60, 240, 242, 305, width, height)
+    generator_blocks(f, 2, 370, 520, 242, 305, width, height)
+    generator_blocks(f, 3, 30, 260, 380, 420, width, height)
+    generator_blocks(f, 3, 300, 580, 450, 580, width, height)
+
+
+def create_map_for_levels(walls):
+    a = f"maps/Map_{start_level}level.txt"
+    f = open(a, 'w')
+    create_mapgenerated(f, 30, 30)
+    create_mapgenerated(f, 40, 15)
+    f.writelines(foundation_map)
+    f.close()
+    notepad_to_array(a, walls)
+
+
+screen = pygame.display.set_mode(SCREEN_SIZE)
+pygame.display.set_caption('Pac-Man')
+board = pygame.image.load("pacman_startgame.png")
+board1 = board.get_rect(
+    bottomright=(800, 500))
+screen.blit(board, board1)
+pygame.display.update()
+
+
+def start_music():
+    pygame.init()
+    mixer.music.load('music/pacman_beginning.wav')
+    mixer.music.play()
+    key_pressed = False
+    while not key_pressed:
+        for event_ in pygame.event.get():
+            if event_.type == KEYDOWN and event_.key == K_RETURN:
+                key_pressed = True
+
+
+start_music()
+
+
+directions_of_pinky = []
+directions_of_blinky = []
+directions_of_inky = []
+directions_of_clyde = []
+notepad_to_array("ghosts/ghosts_directions/Pinky_directions.txt", directions_of_pinky)
+notepad_to_array("ghosts/ghosts_directions/Blinky_directions.txt", directions_of_blinky)
+notepad_to_array("ghosts/ghosts_directions/Inky_directions.txt", directions_of_inky)
+notepad_to_array("ghosts/ghosts_directions/Clyde_directions.txt", directions_of_clyde)
 
 
 def first_map(sprites_list):
+
     wall_list = pygame.sprite.RenderPlain()
     walls = []
     # x, y, width, height
-    notepad_to_array("Map.txt", walls)
+    if start_level == 1:
+        notepad_to_array("maps/Map_1level.txt", walls)
+    elif start_level > 1:
+        create_map_for_levels(walls)
     for i in walls:
         wall = Walls(i[0], i[1], i[2], i[3], violet_colour)
         wall_list.add(wall)
@@ -69,10 +105,12 @@ def spawn_setup(sprites_list):
 pygame.init()
 clock = pygame.time.Clock()
 pygame.font.init()
+font = pygame.font.Font("trocchi.ttf", 20)
 pacman_img = pygame.image.load(path_pacman_img)
 
 
 def start_game():
+    global start_level
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
     dots_list = pygame.sprite.RenderPlain()
@@ -84,10 +122,10 @@ def start_game():
     pink_steps = blinky_steps = inky_steps = clyde_steps = 0
 
     pacman = Player(287, 439, path_pacman_img)
-    blinky = Ghosts(287, 199, "ghosts/2469740-blinky.png")
-    pinky = Ghosts(287, 259, "ghosts/2469744-pinky.png")
-    inky = Ghosts(255, 259, "ghosts/2469741-inky.png")
-    clyde = Ghosts(319, 259, "ghosts/2469743-clyde.png")
+    blinky = Ghosts(287, 199, "ghosts/ghosts_img/2469740-blinky.png")
+    pinky = Ghosts(287, 259, "ghosts/ghosts_img/2469744-pinky.png")
+    inky = Ghosts(255, 259, "ghosts/ghosts_img/2469741-inky.png")
+    clyde = Ghosts(319, 259, "ghosts/ghosts_img/2469743-clyde.png")
 
     sprites_list.add(pacman)
     pacman_list.add(pacman)
@@ -101,9 +139,15 @@ def start_game():
     sprites_list.add(clyde)
 
     # TODO Locations for dots
+    print(wall.rect for wall in walls_list)
     for row in range(19):
         for column in range(19):
             if (6 < row < 9) and (7 < column < 11):
+                continue
+
+            elif any([abs(wall.rect.x - (30 * column) - 15) <= 32
+                      and abs(wall.rect.y - (30 * row) - 15) <= 32 and column != 0 for wall in walls_list]):
+                print(column, row)
                 continue
             else:
                 dots = Dots(4, 4)
@@ -111,12 +155,18 @@ def start_game():
             dots.rect.x = 30 * column + 32
             dots.rect.y = 30 * row + 32
 
-            blinky_collide = pygame.sprite.spritecollide(dots, walls_list, False)
-            pinky_collide = pygame.sprite.spritecollide(dots, pacman_list, False)
-            if blinky_collide:
+            walls_dots_collide = pygame.sprite.spritecollide(dots, walls_list, False)
+            pacman_dots_collide = pygame.sprite.spritecollide(dots, pacman_list, False)
+
+            # for wall in walls_list:
+            #     if wall.rect.x - dots.rect.x < 30 or dots.rect.x - wall.rect.x < 30:
+            #
+
+            if walls_dots_collide:
                 continue
-            elif pinky_collide:
+            elif pacman_dots_collide:
                 continue
+
             else:
                 dots_list.add(dots)
                 sprites_list.add(dots)
@@ -200,13 +250,13 @@ def start_game():
 
         check_location(blinky)
 
-        sprite_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
+        pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
 
-        if sprite_collides_dots:
+        if pacmab_collides_dots:
 
-            if len(sprite_collides_dots) > 0:
-                score += len(sprite_collides_dots)
-            mixer.music.load('pacman_chomp.wav')
+            if len(pacmab_collides_dots) > 0:
+                score += len(pacmab_collides_dots)
+            mixer.music.load('music/pacman_chomp.wav')
             mixer.music.play()
 
         # TODO Clean
@@ -226,12 +276,15 @@ def start_game():
         screen.blit(text, [690, 70])
         text1 = font.render("X: " + str(pacman.rect.x) + " Y: " + str(pacman.rect.y), True, (255, 255, 0))
         screen.blit(text1, [690, 100])
+        text1 = font.render(f"Your level:{start_level}", True, (255, 255, 0))
+        screen.blit(text1, [690, 150])
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
-            mixer.music.load('pacman_death.wav')
+            mixer.music.load('music/pacman_death.wav')
             mixer.music.play()
             finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
         if score == win_score:
+            start_level += 1
             finish_game("You won!", 145, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
 
         pygame.display.flip()
@@ -294,6 +347,7 @@ def finish_game(message, left, sprites_list, dots_list, ghosts_list, pacman_list
         clock.tick(10)
 
 
+start_level = 1
 start_game()
 pygame.quit()
 pdb.set_trace()
