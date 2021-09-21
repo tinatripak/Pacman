@@ -133,19 +133,19 @@ def start_game():
     pacman = Player(287, 439, path_pacman_img)
     blinky = Ghosts(287, 199, "ghosts/ghosts_img/2469740-blinky.png")
     pinky = Ghosts(287, 259, "ghosts/ghosts_img/2469744-pinky.png")
-    inky = Ghosts(255, 259, "ghosts/ghosts_img/2469741-inky.png")
-    clyde = Ghosts(319, 259, "ghosts/ghosts_img/2469743-clyde.png")
+    inky = Ghosts(287, 199, "ghosts/ghosts_img/2469741-inky.png")
+    clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
 
     sprites_list.add(pacman)
     pacman_list.add(pacman)
-    ghosts_list.add(blinky)
-    sprites_list.add(blinky)
-    ghosts_list.add(pinky)
-    sprites_list.add(pinky)
     ghosts_list.add(inky)
     sprites_list.add(inky)
     ghosts_list.add(clyde)
     sprites_list.add(clyde)
+    ghosts_list.add(blinky)
+    sprites_list.add(blinky)
+    ghosts_list.add(pinky)
+    sprites_list.add(pinky)
 
     # TODO Locations for dots
 
