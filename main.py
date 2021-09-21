@@ -11,7 +11,8 @@ import random
 from point import Point
 import collections
 import time
-from square import Square
+from queue import PriorityQueue
+import queue as Q
 
 
 def notepad_to_array(path, array):
@@ -259,6 +260,7 @@ def start_game():
         # bfs_searcher(pacman, clyde)
         # bfs_searcher(pacman, blinky)
         # dfs_searcher(pacman, pinky)
+        ucs_searcher(pacman, pinky)
 
         pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
 
@@ -286,16 +288,21 @@ def start_game():
         text = font.render("Location", True, (255, 255, 0))
         screen.blit(text, [690, 70])
         text1 = font.render("X: " + str(pacman.rect.x) + " Y: " + str(pacman.rect.y), True, (255, 255, 0))
-        screen.blit(text1, [690, 100])
+        screen.blit(text1, [690, 130])
         text1 = font.render(f"Your level:{start_level}", True, (255, 255, 0))
-        screen.blit(text1, [690, 150])
-
+        screen.blit(text1, [690, 160])
+        start_time = time.time()
+        time_algor = time.time() - start_time
+        text = font.render("Time", True, (255, 255, 0))
+        screen.blit(text, [690, 190])
+        text = font.render(str(time_algor) + "s", True, (255, 255, 0))
+        screen.blit(text, [690, 220])
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')
             mixer.music.play()
             finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
-        if score == 1:
+        if score == win_score:
             start_level += 1
             finish_game("You won!", 180, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
 
@@ -316,6 +323,14 @@ def dfs_searcher(player, enemy):
     if array_res is not None:
         for i in array_res:
             screen.blit(pygame.image.load("pink.png"), (i.x, i.y))
+            pygame.display.flip()
+
+
+def ucs_searcher(player, enemy):
+    array_res = ucs(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
+    if array_res is not None:
+        for i in array_res:
+            screen.blit(pygame.image.load("yellow.png"), (i.x, i.y))
             pygame.display.flip()
 
 
@@ -375,17 +390,30 @@ def finish_game(message, left, sprites_list, dots_list, ghosts_list, pacman_list
         clock.tick(10)
 
 
-def get_neighbours(x, y, speed):
-    top = Point(x, y + speed)
-    bottom = Point(x, y - speed)
-    right = Point(x + speed, y)
-    left = Point(x - speed, y)
+def get_neighbours(_point, speed):
+    top = Point(_point.x, _point.y + speed)
+    bottom = Point(_point.x, _point.y - speed)
+    right = Point(_point.x + speed, _point.y)
+    left = Point(_point.x - speed, _point.y)
     points = [top, bottom, right, left]
     result = []
     for point in points:
         if check_point(point):
             result.append(point)
     return result
+
+
+def get_key_value_neighbours(point, speed):
+    points = get_neighbours(point, speed)
+    key_value = []
+    for item in points:
+        key_value.append([(point.y/10 + item.x/7)*2,item])
+    key_value.sort(key=get_key)
+    return key_value
+
+
+def get_key(item):
+    return item[0]
 
 
 def check_point(point):
@@ -412,7 +440,7 @@ def bfs(start_x, start_y, end_x, end_y):
     while len(queue) > 0:
         vertex = queue.popleft()
 
-        for neighbour in get_neighbours(vertex.x, vertex.y, 30):
+        for neighbour in get_neighbours(vertex, 30):
             if not contains_point(neighbour, visited):
                 visited.add(neighbour)
                 if not contains_point(neighbour, queue):
@@ -432,7 +460,7 @@ def dfs(start_x, start_y, end_x, end_y):
     while len(queue) > 0:
         vertex = queue.pop()
 
-        for neighbour in get_neighbours(vertex.x, vertex.y, 30):
+        for neighbour in get_neighbours(vertex, 30):
             if not contains_point(neighbour, visited):
                 visited.add(neighbour)
                 if not contains_point(neighbour, queue):
@@ -440,6 +468,30 @@ def dfs(start_x, start_y, end_x, end_y):
                     path[neighbour] = vertex
 
             if neighbour.x == end.x and neighbour.y == end.y:
+                return get_path(path, end)
+
+
+def ucs(start_x, start_y, end_x, end_y):
+    start = Point(start_x, start_y)
+    end = Point(end_x, end_y)
+
+    visited = [start]
+    queue = Q.PriorityQueue()
+    queue.put((0, start))
+    path = {start: None}
+
+    while not queue.empty():
+        vertex_temp = queue.get()
+        vertex = vertex_temp[len(vertex_temp) - 1]
+
+        for neighbour in get_key_value_neighbours(vertex, 30):
+            if not contains_point(neighbour[1], visited):
+                visited.append(neighbour[1])
+                if neighbour not in (x for x in queue.queue):
+                    queue.put((neighbour[0], neighbour[1]))
+                    path[neighbour[1]] = vertex
+
+            if neighbour[1].x == end.x and neighbour[1].y == end.y:
                 return get_path(path, end)
 
 
