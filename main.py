@@ -260,7 +260,7 @@ def start_game():
         # bfs_searcher(pacman, clyde)
         # bfs_searcher(pacman, blinky)
         # dfs_searcher(pacman, pinky)
-        ucs_searcher(pacman, pinky)
+        #ucs_searcher(pacman, pinky)
 
         pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
 
@@ -297,6 +297,8 @@ def start_game():
         screen.blit(text, [690, 190])
         text = font.render(str(time_algor) + "s", True, (255, 255, 0))
         screen.blit(text, [690, 220])
+
+        dfs_searcher(pacman, blinky)
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')
