@@ -8,6 +8,10 @@ from walls import Walls
 from ghosts import Ghosts
 from dots import Dots
 import random
+from point import Point
+import collections
+import time
+from square import Square
 
 
 def notepad_to_array(path, array):
@@ -20,7 +24,7 @@ def notepad_to_array(path, array):
             array.append(temp)
 
 
-def generator_blocks(f, n, x1, x2, y1, y2, width, height):
+def generator(f, n, x1, x2, y1, y2, width, height):
     for i in range(n):
         number1 = (random.randrange(x1, x2, 30))
         number2 = (random.randrange(y1, y2, 30))
@@ -28,15 +32,15 @@ def generator_blocks(f, n, x1, x2, y1, y2, width, height):
 
 
 def create_mapgenerated(f, width, height):
-    generator_blocks(f, 4, 30, 364, 30, 150, width, height)
-    generator_blocks(f, 2, 370, 580, 30, 180, width, height)
-    generator_blocks(f, 2, 60, 240, 242, 305, width, height)
-    generator_blocks(f, 2, 370, 520, 242, 305, width, height)
-    generator_blocks(f, 3, 30, 260, 380, 420, width, height)
-    generator_blocks(f, 3, 300, 580, 450, 580, width, height)
+    generator(f, 4, 30, 364, 30, 150, width, height)
+    generator(f, 2, 370, 580, 30, 180, width, height)
+    generator(f, 2, 60, 240, 242, 305, width, height)
+    generator(f, 2, 370, 520, 242, 305, width, height)
+    generator(f, 3, 30, 260, 380, 420, width, height)
+    generator(f, 3, 300, 580, 450, 580, width, height)
 
 
-def create_map_for_levels(walls):
+def create_many_maps_for_levels(walls):
     a = f"maps/Map_{start_level}level.txt"
     f = open(a, 'w')
     create_mapgenerated(f, 30, 30)
@@ -68,7 +72,6 @@ def start_music():
 
 start_music()
 
-
 directions_of_pinky = []
 directions_of_blinky = []
 directions_of_inky = []
@@ -80,14 +83,13 @@ notepad_to_array("ghosts/ghosts_directions/Clyde_directions.txt", directions_of_
 
 
 def first_map(sprites_list):
-
     wall_list = pygame.sprite.RenderPlain()
     walls = []
     # x, y, width, height
     if start_level == 1:
         notepad_to_array("maps/Map_1level.txt", walls)
     elif start_level > 1:
-        create_map_for_levels(walls)
+        create_many_maps_for_levels(walls)
     for i in walls:
         wall = Walls(i[0], i[1], i[2], i[3], violet_colour)
         wall_list.add(wall)
@@ -111,12 +113,15 @@ pacman_img = pygame.image.load(path_pacman_img)
 
 def start_game():
     global start_level
+    global walls_list
+    global pacman
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
     dots_list = pygame.sprite.RenderPlain()
     spawn = spawn_setup(sprites_list)
     ghosts_list = pygame.sprite.RenderPlain()
     pacman_list = pygame.sprite.RenderPlain()
+    path = pygame.sprite.Group()
 
     pink_turn = blinky_turn = inky_turn = clyde_turn = 0
     pink_steps = blinky_steps = inky_steps = clyde_steps = 0
@@ -139,7 +144,7 @@ def start_game():
     sprites_list.add(clyde)
 
     # TODO Locations for dots
-    print(wall.rect for wall in walls_list)
+
     for row in range(19):
         for column in range(19):
             if (6 < row < 9) and (7 < column < 11):
@@ -147,7 +152,7 @@ def start_game():
 
             elif any([abs(wall.rect.x - (30 * column) - 15) <= 32
                       and abs(wall.rect.y - (30 * row) - 15) <= 32 and column != 0 for wall in walls_list]):
-                print(column, row)
+
                 continue
             else:
                 dots = Dots(4, 4)
@@ -173,7 +178,6 @@ def start_game():
 
     score = 0
     done = False
-
     win_score = len(dots_list)
 
     while not done:
@@ -250,6 +254,12 @@ def start_game():
 
         check_location(blinky)
 
+        # bfs_searcher(pacman, pinky)
+        # bfs_searcher(pacman, inky)
+        # bfs_searcher(pacman, clyde)
+        # bfs_searcher(pacman, blinky)
+        # dfs_searcher(pacman, pinky)
+
         pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
 
         if pacmab_collides_dots:
@@ -266,6 +276,7 @@ def start_game():
         spawn.draw(screen)
         sprites_list.draw(screen)
         ghosts_list.draw(screen)
+
         # TODO Write Score Of Player
         text = font.render("High Score", True, (255, 255, 0))
         screen.blit(text, [690, 10])
@@ -279,16 +290,33 @@ def start_game():
         text1 = font.render(f"Your level:{start_level}", True, (255, 255, 0))
         screen.blit(text1, [690, 150])
 
+
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')
             mixer.music.play()
             finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
-        if score == win_score:
+        if score == 1:
             start_level += 1
-            finish_game("You won!", 145, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
+            finish_game("You won!", 180, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
 
         pygame.display.flip()
         clock.tick(10)
+
+
+def bfs_searcher(player, enemy):
+    array_res = bfs(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
+    if array_res is not None:
+        for i in array_res:
+            screen.blit(pygame.image.load("blue.png"), (i.x, i.y))
+            pygame.display.flip()
+
+
+def dfs_searcher(player, enemy):
+    array_res = dfs(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
+    if array_res is not None:
+        for i in array_res:
+            screen.blit(pygame.image.load("pink.png"), (i.x, i.y))
+            pygame.display.flip()
 
 
 def set_direction(direction):
@@ -347,7 +375,102 @@ def finish_game(message, left, sprites_list, dots_list, ghosts_list, pacman_list
         clock.tick(10)
 
 
+def get_neighbours(x, y, speed):
+    top = Point(x, y + speed)
+    bottom = Point(x, y - speed)
+    right = Point(x + speed, y)
+    left = Point(x - speed, y)
+    points = [top, bottom, right, left]
+    result = []
+    for point in points:
+        if check_point(point):
+            result.append(point)
+    return result
+
+
+def check_point(point):
+    x_def = 13
+    y_def = 11
+    if point.x <= -13 or point.x >= 600 or point.y <= -13 or point.y >= 600 \
+            or (229 <= point.y <= 289) and (227 <= point.x <= 347):
+        return False
+    for wall in walls_list:
+        if wall.rect.x - x_def == point.x and wall.rect.y - y_def == point.y:
+            return False
+        if wall.rect.x - x_def <= point.x <= wall.rect.x - x_def + wall.rect.width and \
+                wall.rect.y - y_def <= point.y <= wall.rect.y - y_def + wall.rect.height:
+            return False
+    return True
+
+
+def bfs(start_x, start_y, end_x, end_y):
+    start = Point(start_x, start_y)
+    end = Point(end_x, end_y)
+    visited, queue = set(), collections.deque([start])
+    visited.add(start)
+    path = {start: None}
+    while len(queue) > 0:
+        vertex = queue.popleft()
+
+        for neighbour in get_neighbours(vertex.x, vertex.y, 30):
+            if not contains_point(neighbour, visited):
+                visited.add(neighbour)
+                if not contains_point(neighbour, queue):
+                    queue.append(neighbour)
+                    path[neighbour] = vertex
+
+            if neighbour.x == end.x and neighbour.y == end.y:
+                return get_path(path, end)
+
+
+def dfs(start_x, start_y, end_x, end_y):
+    start = Point(start_x, start_y)
+    end = Point(end_x, end_y)
+    visited, queue = set(), collections.deque([start])
+    visited.add(start)
+    path = {start: None}
+    while len(queue) > 0:
+        vertex = queue.pop()
+
+        for neighbour in get_neighbours(vertex.x, vertex.y, 30):
+            if not contains_point(neighbour, visited):
+                visited.add(neighbour)
+                if not contains_point(neighbour, queue):
+                    queue.append(neighbour)
+                    path[neighbour] = vertex
+
+            if neighbour.x == end.x and neighbour.y == end.y:
+                return get_path(path, end)
+
+
+def get_path(path, end):
+    result = []
+    point = end
+    result.append(point)
+    dict_value = get_form_dict(path, point)
+    while dict_value is not None:
+        result.append(dict_value)
+        point = dict_value
+        dict_value = get_form_dict(path, point)
+    return result
+
+
+def contains_point(point, array):
+    for item in array:
+        if item.x == point.x and item.y == point.y:
+            return True
+    return False
+
+
+def get_form_dict(path, _key):
+    for item in path.items():
+        if item[0].x == _key.x and item[0].y == _key.y:
+            return item[1]
+    return None
+
+
 start_level = 1
+
 start_game()
 pygame.quit()
 pdb.set_trace()
