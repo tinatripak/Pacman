@@ -2,7 +2,8 @@ import pdb
 import pygame
 from pygame import *
 from const import black_colour, violet_colour, white_colour, \
-    DirectionState, SCREEN_SIZE, path_pacman_img, foundation_map
+    DirectionState, SCREEN_SIZE, path_pacman_img, foundation_map, \
+    AlgorithmType
 from player import Player
 from walls import Walls
 from ghosts import Ghosts
@@ -11,7 +12,6 @@ import random
 from point import Point
 import collections
 import time
-from queue import PriorityQueue
 import queue as Q
 
 
@@ -116,6 +116,9 @@ def start_game():
     global start_level
     global walls_list
     global pacman
+
+    a_type = AlgorithmType.bfs;
+
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
     dots_list = pygame.sprite.RenderPlain()
@@ -164,10 +167,6 @@ def start_game():
             walls_dots_collide = pygame.sprite.spritecollide(dots, walls_list, False)
             pacman_dots_collide = pygame.sprite.spritecollide(dots, pacman_list, False)
 
-            # for wall in walls_list:
-            #     if wall.rect.x - dots.rect.x < 30 or dots.rect.x - wall.rect.x < 30:
-            #
-
             if walls_dots_collide:
                 continue
             elif pacman_dots_collide:
@@ -199,6 +198,13 @@ def start_game():
                 if event_.key == pygame.K_RIGHT:
                     pacman.image = set_direction(DirectionState.right.name)
                     pacman.change_speed_player(30, 0)
+                if event_.key == pygame.K_z:
+                    if a_type == AlgorithmType.bfs:
+                        a_type = AlgorithmType.dfs
+                    elif a_type == AlgorithmType.dfs:
+                        a_type = AlgorithmType.ucs
+                    elif a_type == AlgorithmType.ucs:
+                        a_type = AlgorithmType.bfs
 
             if event_.type == pygame.KEYUP:
                 if event_.key == pygame.K_UP:
@@ -212,7 +218,6 @@ def start_game():
                     pacman.change_speed_player(30, 0)
                 if event_.key == pygame.K_RIGHT:
                     pacman.image = set_direction(DirectionState.right.name)
-
                     pacman.change_speed_player(-30, 0)
 
         pacman.new_position_player(walls_list, spawn)
@@ -255,13 +260,6 @@ def start_game():
 
         check_location(blinky)
 
-        # bfs_searcher(pacman, pinky)
-        # bfs_searcher(pacman, inky)
-        # bfs_searcher(pacman, clyde)
-        # bfs_searcher(pacman, blinky)
-        # dfs_searcher(pacman, pinky)
-        #ucs_searcher(pacman, pinky)
-
         pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
 
         if pacmab_collides_dots:
@@ -286,19 +284,40 @@ def start_game():
         screen.blit(text1, [690, 40])
 
         text = font.render("Location", True, (255, 255, 0))
-        screen.blit(text, [690, 70])
+        screen.blit(text, [690, 80])
         text1 = font.render("X: " + str(pacman.rect.x) + " Y: " + str(pacman.rect.y), True, (255, 255, 0))
-        screen.blit(text1, [690, 130])
+        screen.blit(text1, [690, 110])
         text1 = font.render(f"Your level:{start_level}", True, (255, 255, 0))
-        screen.blit(text1, [690, 160])
-        start_time = time.time()
-        time_algor = time.time() - start_time
+        screen.blit(text1, [690, 150])
+
         text = font.render("Time", True, (255, 255, 0))
         screen.blit(text, [690, 190])
-        text = font.render(str(time_algor) + "s", True, (255, 255, 0))
-        screen.blit(text, [690, 220])
 
-        dfs_searcher(pacman, blinky)
+        time_algor = 0
+        if a_type == AlgorithmType.bfs:
+            start_time = time.time()
+            bfs_searcher(pacman, blinky)
+            bfs_searcher(pacman, pinky)
+            bfs_searcher(pacman, inky)
+            bfs_searcher(pacman, clyde)
+            time_algor = str(round(time.time() - start_time, 5))
+        elif a_type == AlgorithmType.dfs:
+            start_time = time.time()
+            dfs_searcher(pacman, blinky)
+            dfs_searcher(pacman, pinky)
+            dfs_searcher(pacman, inky)
+            dfs_searcher(pacman, clyde)
+            time_algor = str(round(time.time() - start_time, 5))
+        elif a_type == AlgorithmType.ucs:
+            start_time = time.time()
+            ucs_searcher(pacman, blinky)
+            ucs_searcher(pacman, pinky)
+            ucs_searcher(pacman, inky)
+            ucs_searcher(pacman, clyde)
+            time_algor = str(round(time.time() - start_time, 5))
+
+        text = font.render(time_algor + "s", True, (255, 255, 0))
+        screen.blit(text, [690, 220])
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')

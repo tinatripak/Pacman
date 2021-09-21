@@ -29,3 +29,9 @@ class DirectionState(Enum):
     left = 2
     up = 3
     down = 4
+
+
+class AlgorithmType(Enum):
+    bfs = 1
+    dfs = 2
+    ucs = 3
