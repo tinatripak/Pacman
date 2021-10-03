@@ -117,7 +117,8 @@ def start_game():
     global walls_list
     global pacman
 
-    a_type = AlgorithmType.bfs;
+    a_type = AlgorithmType.bfs
+    timer_enemy = 10
 
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
@@ -133,7 +134,7 @@ def start_game():
     pacman = Player(287, 439, path_pacman_img)
     blinky = Ghosts(287, 199, "ghosts/ghosts_img/2469740-blinky.png")
     pinky = Ghosts(287, 259, "ghosts/ghosts_img/2469744-pinky.png")
-    inky = Ghosts(287, 199, "ghosts/ghosts_img/2469741-inky.png")
+    inky = Ghosts(227, 199, "ghosts/ghosts_img/2469741-inky.png")
     clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
 
     sprites_list.add(pacman)
@@ -204,6 +205,8 @@ def start_game():
                     elif a_type == AlgorithmType.dfs:
                         a_type = AlgorithmType.ucs
                     elif a_type == AlgorithmType.ucs:
+                        a_type = AlgorithmType.astar_search
+                    elif a_type == AlgorithmType.astar_search:
                         a_type = AlgorithmType.bfs
 
             if event_.type == pygame.KEYUP:
@@ -222,27 +225,46 @@ def start_game():
 
         pacman.new_position_player(walls_list, spawn)
 
-        changed_speed_inky = inky.change_speed_ghost(directions_of_inky, False, inky_turn, inky_steps,
-                                                     len(directions_of_inky) - 1)
-        inky_turn = changed_speed_inky[0]
-        inky_steps = changed_speed_inky[1]
-        inky.change_speed_ghost(directions_of_inky, False, inky_turn, inky_steps, len(directions_of_inky) - 1)
+        if not timer_enemy == 0:
+            timer_enemy -= 1
+        else:
+            timer_enemy = 10
+            array_res = dfs(inky.rect.x, inky.rect.y, pacman.rect.x, pacman.rect.y)
+            point = Point(inky.rect.x, inky.rect.y)
+            speed = 30
+            if array_res is not None:
+                point = array_res[0]
+            if point.y < inky.rect.y and check_point(Point(point.x, point.y + speed)):
+                inky.change_speed_player(0, speed)
+            elif point.y > inky.rect.y and check_point(Point(point.x, point.y - speed)):
+                inky.change_speed_player(0, -speed)
+            elif point.x < inky.rect.x and check_point(Point(point.x - speed, point.y)):
+                inky.change_speed_player(-speed, 0)
+            elif point.x > inky.rect.x and check_point(Point(point.x + speed, point.y)):
+                inky.change_speed_player(speed, 0)
+
+        # changed_speed_inky = inky.change_speed_ghost(directions_of_inky, False, inky_turn, inky_steps,
+        #                                              len(directions_of_inky) - 1)
+        # inky_turn = changed_speed_inky[0]
+        # inky_steps = changed_speed_inky[1]
+        # inky.change_speed_ghost(directions_of_inky, False, inky_turn, inky_steps, len(directions_of_inky) - 1)
         inky.new_position_player(walls_list, False)
 
-        changed_speed_clyde = clyde.change_speed_ghost(directions_of_clyde, "clyde", clyde_turn, clyde_steps,
+        changed_speed_clyde = clyde.change_speed_ghost(directions_of_clyde, False, clyde_turn, clyde_steps,
                                                        len(directions_of_clyde) - 1)
         clyde_turn = changed_speed_clyde[0]
         clyde_steps = changed_speed_clyde[1]
         clyde.change_speed_ghost(directions_of_clyde, "clyde", clyde_turn, clyde_steps, len(directions_of_clyde) - 1)
-        clyde.new_position_player(walls_list, False)
+
+        clyde.new_position_player(walls_list, spawn)
 
         changed_speed_pinky = pinky.change_speed_ghost(directions_of_pinky, False, pink_turn, pink_steps,
                                                        len(directions_of_pinky) - 1)
         pink_turn = changed_speed_pinky[0]
         pink_steps = changed_speed_pinky[1]
         pinky.change_speed_ghost(directions_of_pinky, False, pink_turn, pink_steps, len(directions_of_pinky) - 1)
-        pinky.new_position_player(walls_list, False)
 
+        pinky.new_position_player(walls_list, False)
         changed_speed_blinky = blinky.change_speed_ghost(directions_of_blinky, False, blinky_turn, blinky_steps,
                                                          len(directions_of_blinky) - 1)
         blinky_turn = changed_speed_blinky[0]
@@ -261,7 +283,8 @@ def start_game():
         check_location(blinky)
 
         pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
-
+        # for i in dots_list:
+        #     print(i.rect.x , i.rect.y)
         if pacmab_collides_dots:
 
             if len(pacmab_collides_dots) > 0:
@@ -292,32 +315,38 @@ def start_game():
 
         text = font.render("Time", True, (255, 255, 0))
         screen.blit(text, [690, 190])
-
         time_algor = 0
-        if a_type == AlgorithmType.bfs:
-            start_time = time.time()
-            bfs_searcher(pacman, blinky)
-            bfs_searcher(pacman, pinky)
-            bfs_searcher(pacman, inky)
-            bfs_searcher(pacman, clyde)
-            time_algor = str(round(time.time() - start_time, 5))
-        elif a_type == AlgorithmType.dfs:
-            start_time = time.time()
-            dfs_searcher(pacman, blinky)
-            dfs_searcher(pacman, pinky)
-            dfs_searcher(pacman, inky)
-            dfs_searcher(pacman, clyde)
-            time_algor = str(round(time.time() - start_time, 5))
-        elif a_type == AlgorithmType.ucs:
-            start_time = time.time()
-            ucs_searcher(pacman, blinky)
-            ucs_searcher(pacman, pinky)
-            ucs_searcher(pacman, inky)
-            ucs_searcher(pacman, clyde)
-            time_algor = str(round(time.time() - start_time, 5))
-
-        text = font.render(time_algor + "s", True, (255, 255, 0))
-        screen.blit(text, [690, 220])
+        # if a_type == AlgorithmType.bfs:
+        #     start_time = time.time()
+        #     bfs_searcher(pacman, pinky)
+        #     bfs_searcher(pacman, blinky)
+        #     bfs_searcher(pacman, inky)
+        #     bfs_searcher(pacman, clyde)
+        #     time_algor = str(round(time.time() - start_time, 5))
+        # elif a_type == AlgorithmType.dfs:
+        #     start_time = time.time()
+        #     dfs_searcher(pacman, blinky)
+        #     dfs_searcher(pacman, pinky)
+        #     dfs_searcher(pacman, inky)
+        #     dfs_searcher(pacman, clyde)
+        #     time_algor = str(round(time.time() - start_time, 5))
+        # elif a_type == AlgorithmType.ucs:
+        #     start_time = time.time()
+        #     ucs_searcher(pacman, blinky)
+        #     ucs_searcher(pacman, pinky)
+        #     ucs_searcher(pacman, inky)
+        #     ucs_searcher(pacman, clyde)
+        #     time_algor = str(round(time.time() - start_time, 5))
+        # elif a_type == AlgorithmType.astar_search:
+        #     start_time = time.time()
+        #     a_star_s_searcher(pacman, blinky)
+        #     a_star_s_searcher(pacman, pinky)
+        #     a_star_s_searcher(pacman, inky)
+        #     a_star_s_searcher(pacman, clyde)
+        #     time_algor = str(round(time.time() - start_time, 5))
+        #
+        # text = font.render(time_algor + "s", True, (255, 255, 0))
+        # screen.blit(text, [690, 220])
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')
@@ -352,6 +381,14 @@ def ucs_searcher(player, enemy):
     if array_res is not None:
         for i in array_res:
             screen.blit(pygame.image.load("yellow.png"), (i.x, i.y))
+            pygame.display.flip()
+
+
+def a_star_s_searcher(player, enemy):
+    array_res = astar_search(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
+    if array_res is not None:
+        for i in array_res:
+            screen.blit(pygame.image.load("purple.png"), (i.x, i.y))
             pygame.display.flip()
 
 
@@ -428,9 +465,22 @@ def get_key_value_neighbours(point, speed):
     points = get_neighbours(point, speed)
     key_value = []
     for item in points:
-        key_value.append([(point.y/10 + item.x/7)*2,item])
+        key_value.append([(point.y / 10 + item.x / 7) * 2, item])
     key_value.sort(key=get_key)
     return key_value
+
+
+def get_a_search_neighbours(point, speed):
+    points = get_neighbours(point, speed)
+    key_value = []
+    for item in points:
+        key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
+    key_value.sort(key=get_key)
+    return key_value
+
+
+def get_heuristic_path_length(point, item):
+    return abs(point.x - item.x) + abs(point.y - item.y)
 
 
 def get_key(item):
@@ -506,6 +556,34 @@ def ucs(start_x, start_y, end_x, end_y):
         vertex = vertex_temp[len(vertex_temp) - 1]
 
         for neighbour in get_key_value_neighbours(vertex, 30):
+            if not contains_point(neighbour[1], visited):
+                visited.append(neighbour[1])
+                if neighbour not in (x for x in queue.queue):
+                    queue.put((neighbour[0], neighbour[1]))
+                    path[neighbour[1]] = vertex
+
+            if neighbour[1].x == end.x and neighbour[1].y == end.y:
+                return get_path(path, end)
+
+
+def heuristic(from_, to):
+    return abs(from_.x - to.x) + abs(from_.y - to.y)
+
+
+def astar_search(start_x, start_y, end_x, end_y):
+    start = Point(start_x, start_y)
+    end = Point(end_x, end_y)
+
+    visited = [start]
+    queue = Q.PriorityQueue()
+    queue.put((0, start))
+    path = {start: None}
+
+    while not queue.empty():
+        vertex_temp = queue.get()
+        vertex = vertex_temp[len(vertex_temp) - 1]
+
+        for neighbour in get_a_search_neighbours(vertex, 30):
             if not contains_point(neighbour[1], visited):
                 visited.append(neighbour[1])
                 if neighbour not in (x for x in queue.queue):

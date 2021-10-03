@@ -35,3 +35,4 @@ class AlgorithmType(Enum):
     bfs = 1
     dfs = 2
     ucs = 3
+    astar_search = 4

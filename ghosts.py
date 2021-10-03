@@ -2,6 +2,13 @@ from player import Player
 
 
 class Ghosts(Player):
+    # def change_speed_ghost(self, x, y):
+    #     try:
+    #         self.change_x = x
+    #         self.change_y = y
+    #
+    #     except IndexError:
+    #         return [0, 0]
     def change_speed_ghost(self, list_, ghost, turn, steps, l):
         try:
             if steps < list_[turn][2]:
@@ -21,3 +28,4 @@ class Ghosts(Player):
             return [turn, steps]
         except IndexError:
             return [0, 0]
+
