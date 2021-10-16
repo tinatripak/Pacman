@@ -4,7 +4,6 @@ import pygame
 class Player(pygame.sprite.Sprite):
     change_x = 0
     change_y = 0
-    playerLives = 3
 
     def __init__(self, x, y, filename):
         pygame.sprite.Sprite.__init__(self)
@@ -14,6 +13,10 @@ class Player(pygame.sprite.Sprite):
         self.rect.left = x
         self.prev_x = x
         self.prev_y = y
+        self.live = 3
+
+    def lesslive(self):
+        self.live -= 1
 
     def change_speed_player(self, x, y):
         if self.rect.x > 587:
@@ -37,11 +40,29 @@ class Player(pygame.sprite.Sprite):
         x_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
         if x_sprite_collide:
             self.rect.left = old_x
+            self.rect.top=self.prev_y
+            y_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
+            if y_sprite_collide:
+                self.rect.top=old_y
         else:
+
             self.rect.top = new_y
+
             y_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
             if y_sprite_collide:
                 self.rect.top = old_y
+                self.rect.left=self.prev_x
+                x_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
+                if x_sprite_collide:
+                    self.rect.left=old_x
+        # x_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
+        # if x_sprite_collide:
+        #     self.rect.left = old_x
+        # else:
+        #     self.rect.top = new_y
+        #     y_sprite_collide = pygame.sprite.spritecollide(self, walls, False)
+        #     if y_sprite_collide:
+        #         self.rect.top = old_y
 
         if spawn:
             spawn_sprite_collide = pygame.sprite.spritecollide(self, spawn, False)

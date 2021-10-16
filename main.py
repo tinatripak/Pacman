@@ -115,10 +115,26 @@ pacman_img = pygame.image.load(path_pacman_img)
 def start_game():
     global start_level
     global walls_list
+    global dots_list
     global pacman
+    global blinky
+    global pinky
+    global inky
+    global clyde
+    global random_dot
+    global pinky_point
+    global inky_point
+    global pacman_point
 
+    inky_point = Point(0, 0)
+    pacman_point = Point(0, 0)
+    pinky_point = Point(0, 0)
     a_type = AlgorithmType.bfs
-    timer_enemy = 10
+    timer_enemy1 = 10
+    timer_enemy3 = 10
+    counter = 10
+    ghostlife = 3
+    totalscore = 0
 
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
@@ -126,16 +142,17 @@ def start_game():
     spawn = spawn_setup(sprites_list)
     ghosts_list = pygame.sprite.RenderPlain()
     pacman_list = pygame.sprite.RenderPlain()
-    path = pygame.sprite.Group()
+    big_dots_list = pygame.sprite.RenderPlain()
 
-    pink_turn = blinky_turn = inky_turn = clyde_turn = 0
-    pink_steps = blinky_steps = inky_steps = clyde_steps = 0
+    blinky_turn = clyde_turn = 0
+    blinky_steps = clyde_steps = 0
 
     pacman = Player(287, 439, path_pacman_img)
     blinky = Ghosts(287, 199, "ghosts/ghosts_img/2469740-blinky.png")
-    pinky = Ghosts(287, 259, "ghosts/ghosts_img/2469744-pinky.png")
+    pinky = Ghosts(287, 199, "ghosts/ghosts_img/2469744-pinky.png")
     inky = Ghosts(227, 199, "ghosts/ghosts_img/2469741-inky.png")
     clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
+    spawnghost = Point(287, 199)
 
     sprites_list.add(pacman)
     pacman_list.add(pacman)
@@ -149,7 +166,7 @@ def start_game():
     sprites_list.add(pinky)
 
     # TODO Locations for dots
-
+    coordinates_bigdots = [0, 18]
     for row in range(19):
         for column in range(19):
             if (6 < row < 9) and (7 < column < 11):
@@ -157,35 +174,40 @@ def start_game():
 
             elif any([abs(wall.rect.x - (30 * column) - 15) <= 32
                       and abs(wall.rect.y - (30 * row) - 15) <= 32 and column != 0 for wall in walls_list]):
-
                 continue
-            else:
-                dots = Dots(4, 4)
 
-            dots.rect.x = 30 * column + 32
-            dots.rect.y = 30 * row + 32
-
-            walls_dots_collide = pygame.sprite.spritecollide(dots, walls_list, False)
-            pacman_dots_collide = pygame.sprite.spritecollide(dots, pacman_list, False)
-
-            if walls_dots_collide:
-                continue
-            elif pacman_dots_collide:
-                continue
+            elif coordinates_bigdots.__contains__(column) and coordinates_bigdots.__contains__(row):
+                big_dot = Dots(8, 8)
+                big_dot.rect.x = 30 * column + 32
+                big_dot.rect.y = 30 * row + 32
+                dots_list.add(big_dot)
+                sprites_list.add(big_dot)
 
             else:
-                dots_list.add(dots)
-                sprites_list.add(dots)
+                dot = Dots(4, 4)
+                dot.rect.x = 30 * column + 32
+                dot.rect.y = 30 * row + 32
+
+                walls_dots_collide = pygame.sprite.spritecollide(dot, walls_list, False)
+                pacman_dots_collide = pygame.sprite.spritecollide(dot, pacman_list, False)
+
+                if walls_dots_collide or pacman_dots_collide:
+                    continue
+                else:
+                    dots_list.add(dot)
+                    sprites_list.add(dot)
 
     score = 0
     done = False
     win_score = len(dots_list)
 
+    random_dot = choose_random_dot()
+    pacman_point = random_dot.rect
+
     while not done:
         for event_ in pygame.event.get():
             if event_.type == pygame.QUIT:
                 done = True
-
             if event_.type == pygame.KEYDOWN:
                 if event_.key == pygame.K_UP:
                     pacman.image = set_direction(DirectionState.up.name)
@@ -222,32 +244,21 @@ def start_game():
                 if event_.key == pygame.K_RIGHT:
                     pacman.image = set_direction(DirectionState.right.name)
                     pacman.change_speed_player(-30, 0)
+        screen.blit(pygame.image.load("blue.png"), (random_dot.rect.x, random_dot.rect.y))
+        pygame.display.flip()
+        if pacman.rect.x == random_dot.rect.x and pacman.rect.y == random_dot.rect.y:
+            random_dot = choose_random_dot()
+            pacman_point = random_dot.rect
 
+        move_ghosts(pacman, random_dot.rect, pacman_point, 30, False, True) # ----------------------------------------------------
         pacman.new_position_player(walls_list, spawn)
 
-        if not timer_enemy == 0:
-            timer_enemy -= 1
+        if not timer_enemy1 == 0:
+            timer_enemy1 -= 1
         else:
-            timer_enemy = 10
-            array_res = dfs(inky.rect.x, inky.rect.y, pacman.rect.x, pacman.rect.y)
-            point = Point(inky.rect.x, inky.rect.y)
-            speed = 30
-            if array_res is not None:
-                point = array_res[0]
-            if point.y < inky.rect.y and check_point(Point(point.x, point.y + speed)):
-                inky.change_speed_player(0, speed)
-            elif point.y > inky.rect.y and check_point(Point(point.x, point.y - speed)):
-                inky.change_speed_player(0, -speed)
-            elif point.x < inky.rect.x and check_point(Point(point.x - speed, point.y)):
-                inky.change_speed_player(-speed, 0)
-            elif point.x > inky.rect.x and check_point(Point(point.x + speed, point.y)):
-                inky.change_speed_player(speed, 0)
+            timer_enemy1 = 2
+            move_ghosts(inky, pacman.rect, inky_point, 30)
 
-        # changed_speed_inky = inky.change_speed_ghost(directions_of_inky, False, inky_turn, inky_steps,
-        #                                              len(directions_of_inky) - 1)
-        # inky_turn = changed_speed_inky[0]
-        # inky_steps = changed_speed_inky[1]
-        # inky.change_speed_ghost(directions_of_inky, False, inky_turn, inky_steps, len(directions_of_inky) - 1)
         inky.new_position_player(walls_list, False)
 
         changed_speed_clyde = clyde.change_speed_ghost(directions_of_clyde, False, clyde_turn, clyde_steps,
@@ -258,13 +269,14 @@ def start_game():
 
         clyde.new_position_player(walls_list, spawn)
 
-        changed_speed_pinky = pinky.change_speed_ghost(directions_of_pinky, False, pink_turn, pink_steps,
-                                                       len(directions_of_pinky) - 1)
-        pink_turn = changed_speed_pinky[0]
-        pink_steps = changed_speed_pinky[1]
-        pinky.change_speed_ghost(directions_of_pinky, False, pink_turn, pink_steps, len(directions_of_pinky) - 1)
+        if not timer_enemy3 == 0:
+            timer_enemy3 -= 1
+        else:
+            timer_enemy3 = 2
+            move_ghosts(pinky, pacman.rect, pinky_point, 30)
 
         pinky.new_position_player(walls_list, False)
+
         changed_speed_blinky = blinky.change_speed_ghost(directions_of_blinky, False, blinky_turn, blinky_steps,
                                                          len(directions_of_blinky) - 1)
         blinky_turn = changed_speed_blinky[0]
@@ -282,13 +294,11 @@ def start_game():
 
         check_location(blinky)
 
-        pacmab_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
-        # for i in dots_list:
-        #     print(i.rect.x , i.rect.y)
-        if pacmab_collides_dots:
+        pacman_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
+        if pacman_collides_dots:
 
-            if len(pacmab_collides_dots) > 0:
-                score += len(pacmab_collides_dots)
+            if len(pacman_collides_dots) > 0:
+                score += len(pacman_collides_dots)
             mixer.music.load('music/pacman_chomp.wav')
             mixer.music.play()
 
@@ -312,52 +322,123 @@ def start_game():
         screen.blit(text1, [690, 110])
         text1 = font.render(f"Your level:{start_level}", True, (255, 255, 0))
         screen.blit(text1, [690, 150])
+        text1 = font.render(f"Your lives:{counter}", True, (255, 255, 0))
+        screen.blit(text1, [690, 250])
 
         text = font.render("Time", True, (255, 255, 0))
         screen.blit(text, [690, 190])
         time_algor = 0
-        # if a_type == AlgorithmType.bfs:
-        #     start_time = time.time()
-        #     bfs_searcher(pacman, pinky)
-        #     bfs_searcher(pacman, blinky)
-        #     bfs_searcher(pacman, inky)
-        #     bfs_searcher(pacman, clyde)
-        #     time_algor = str(round(time.time() - start_time, 5))
-        # elif a_type == AlgorithmType.dfs:
-        #     start_time = time.time()
-        #     dfs_searcher(pacman, blinky)
-        #     dfs_searcher(pacman, pinky)
-        #     dfs_searcher(pacman, inky)
-        #     dfs_searcher(pacman, clyde)
-        #     time_algor = str(round(time.time() - start_time, 5))
-        # elif a_type == AlgorithmType.ucs:
-        #     start_time = time.time()
-        #     ucs_searcher(pacman, blinky)
-        #     ucs_searcher(pacman, pinky)
-        #     ucs_searcher(pacman, inky)
-        #     ucs_searcher(pacman, clyde)
-        #     time_algor = str(round(time.time() - start_time, 5))
-        # elif a_type == AlgorithmType.astar_search:
-        #     start_time = time.time()
-        #     a_star_s_searcher(pacman, blinky)
-        #     a_star_s_searcher(pacman, pinky)
-        #     a_star_s_searcher(pacman, inky)
-        #     a_star_s_searcher(pacman, clyde)
-        #     time_algor = str(round(time.time() - start_time, 5))
-        #
-        # text = font.render(time_algor + "s", True, (255, 255, 0))
-        # screen.blit(text, [690, 220])
+        if a_type == AlgorithmType.bfs:
+            start_time = time.time()
+            bfs_searcher(pinky, pacman)
+            bfs_searcher(blinky, pacman)
+            bfs_searcher(inky, pacman)
+            bfs_searcher(clyde, pacman)
+            time_algor = str(round(time.time() - start_time, 5))
+        elif a_type == AlgorithmType.dfs:
+            start_time = time.time()
+            dfs_searcher(pacman, blinky)
+            dfs_searcher(pacman, pinky)
+            dfs_searcher(pacman, inky)
+            dfs_searcher(pacman, clyde)
+            time_algor = str(round(time.time() - start_time, 5))
+        elif a_type == AlgorithmType.ucs:
+            start_time = time.time()
+            ucs_searcher(pacman, blinky)
+            ucs_searcher(pacman, pinky)
+            ucs_searcher(pacman, inky)
+            ucs_searcher(pacman, clyde)
+            time_algor = str(round(time.time() - start_time, 5))
+        elif a_type == AlgorithmType.astar_search:
+            start_time = time.time()
+            a_star_s_searcher(pacman, blinky)
+            a_star_s_searcher(pacman, pinky)
+            a_star_s_searcher(pacman, inky)
+            a_star_s_searcher(pacman, clyde)
+            time_algor = str(round(time.time() - start_time, 5))
+        mass_ghost = [pinky, inky, clyde, blinky]
+        text = font.render(time_algor + "s", True, (255, 255, 0))
+        screen.blit(text, [690, 220])
+        for dot in dots_list:
+            if dot == Dots(8, 8):
+                for ghost in ghosts_list:
+                    ghost.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+                    now = time.time()
+                    future = now + 10
+                    while time.time() < future:
+                        if pygame.sprite.spritecollide(pacman, ghosts_list, False):
+                            for i in mass_ghost:
+                                if ghost == i:
+                                    killghost(i)
+                            totalscore += 400
+                        pinky.image = pygame.image.load("ghosts/ghosts_img/2469744-pinky.png")
+                        inky.image = pygame.image.load("ghosts/ghosts_img/2469741-inky.png")
+                        blinky.image = pygame.image.load("ghosts/ghosts_img/2469740-blinky.png")
+                        clyde.image = pygame.image.load("ghosts/ghosts_img/2469743-clyde.png")
+                        pass
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')
             mixer.music.play()
-            finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
+            counter -= 1
+            if counter == 0:
+                finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
         if score == win_score:
             start_level += 1
             finish_game("You won!", 180, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
 
         pygame.display.flip()
         clock.tick(10)
+
+
+def choose_random_dot():
+    mass = []
+    for dot in dots_list:
+        mass.append(dot)
+    random_dot = random.choice(mass)
+    random_dot.rect.x -= 15
+    random_dot.rect.y -= 13
+    return random_dot
+
+
+def killghost(ghost):
+    ghost.lesslive()
+    ghost.rect = spawnghost
+
+
+def move_ghosts(ghost, point, ghost_point, speed, is_bfs=True, is_pacman=False):
+    if is_bfs:
+        array_res = bfs(point.x, point.y, ghost.rect.x, ghost.rect.y)
+    else:
+        array_res = astar_search(point.x, point.y, ghost.rect.x, ghost.rect.y)
+    if array_res is not None:
+        i = 0
+        point = array_res[i]
+        if len(array_res) > i + 1:
+            ghost_point = array_res[i + 1]
+        while point.x == ghost.rect.x and point.y == ghost.rect.y:
+            i += 1
+            point = array_res[i]
+            if len(array_res) > i + 1:
+                ghost_point = array_res[i + 1]
+    else:
+        point = ghost_point
+    if point.y < ghost.rect.y and check_point(Point(ghost.rect.x, ghost.rect.y - speed)):
+        if is_pacman:
+            pacman.image = set_direction(DirectionState.up.name)
+        ghost.rect.move_ip(0, -speed)
+    elif point.y > ghost.rect.y and check_point(Point(ghost.rect.x, ghost.rect.y + speed)):
+        if is_pacman:
+            pacman.image = set_direction(DirectionState.down.name)
+        ghost.rect.move_ip(0, speed)
+    elif point.x < ghost.rect.x and check_point(Point(ghost.rect.x - speed, ghost.rect.y)):
+        if is_pacman:
+            pacman.image = set_direction(DirectionState.left.name)
+        ghost.rect.move_ip(-speed, 0)
+    elif point.x > ghost.rect.x and check_point(Point(ghost.rect.x + speed, ghost.rect.y)):
+        if is_pacman:
+            pacman.image = set_direction(DirectionState.right.name)
+        ghost.rect.move_ip(speed, 0)
 
 
 def bfs_searcher(player, enemy):
@@ -474,9 +555,22 @@ def get_a_search_neighbours(point, speed):
     points = get_neighbours(point, speed)
     key_value = []
     for item in points:
-        key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
+        if here_isnot_enemy(item):
+            key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
     key_value.sort(key=get_key)
     return key_value
+
+
+def here_isnot_enemy(point):
+    if point.x == blinky.rect.x and point.y == blinky.rect.y:
+        return False
+    if point.x == pinky.rect.x and point.y == pinky.rect.y:
+        return False
+    if point.x == inky.rect.x and point.y == inky.rect.y:
+        return False
+    if point.x == clyde.rect.x and point.y == clyde.rect.y:
+        return False
+    return True
 
 
 def get_heuristic_path_length(point, item):
@@ -490,7 +584,7 @@ def get_key(item):
 def check_point(point):
     x_def = 13
     y_def = 11
-    if point.x <= -13 or point.x >= 600 or point.y <= -13 or point.y >= 600 \
+    if point.x < 17 or point.x > 559 or point.y < 17 or point.y > 559 \
             or (229 <= point.y <= 289) and (227 <= point.x <= 347):
         return False
     for wall in walls_list:
