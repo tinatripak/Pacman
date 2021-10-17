@@ -136,9 +136,7 @@ def start_game():
     timer_enemy1 = 10
     timer_enemy3 = 10
     counter = 1
-    ghostlife = 3
     totalscore = 0
-
 
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
@@ -146,7 +144,6 @@ def start_game():
     spawn = spawn_setup(sprites_list)
     ghosts_list = pygame.sprite.RenderPlain()
     pacman_list = pygame.sprite.RenderPlain()
-    big_dots_list = pygame.sprite.RenderPlain()
 
     blinky_turn = clyde_turn = 0
     blinky_steps = clyde_steps = 0
@@ -363,23 +360,35 @@ def start_game():
         mass_ghost = [pinky, inky, clyde, blinky]
         text = font.render(time_algor + "s", True, (255, 255, 0))
         screen.blit(text, [690, 220])
-        for dot in dots_list:
-            if dot == Dots(8, 8):
-                for ghost in ghosts_list:
-                    ghost.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
-                    now = time.time()
-                    future = now + 10
-                    while time.time() < future:
-                        if pygame.sprite.spritecollide(pacman, ghosts_list, False):
-                            for i in mass_ghost:
-                                if ghost == i:
-                                    killghost(i)
-                            totalscore += 400
-                        pinky.image = pygame.image.load("ghosts/ghosts_img/2469744-pinky.png")
-                        inky.image = pygame.image.load("ghosts/ghosts_img/2469741-inky.png")
-                        blinky.image = pygame.image.load("ghosts/ghosts_img/2469740-blinky.png")
-                        clyde.image = pygame.image.load("ghosts/ghosts_img/2469743-clyde.png")
-                        pass
+        big_dots_list = [[0,0],[0,18],[18,0],[18,18]]
+        #30 * column + 32
+        # if pygame.sprite.spritecollide(pacman, dots_list, False):
+        #     for dot in dots_list:
+        #         if dot.rect.x == 32 and dot.rect.y == 32 or\
+        #                 dot.rect.x == 32 and dot.rect.y == 572 or\
+        #             dot.rect.x == 572 and dot.rect.y == 32 or \
+        #                 dot.rect.x == 572 and dot.rect.y == 572:
+        #             ghost.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+        #             now = time.time()
+        #             future = now + 10
+        #             while time.time() < future:
+        # for dot in dots_list:
+        #     if dot.rect.width == 8 and dot.rect.height == 8:
+        #         for ghost in ghosts_list:
+        #             ghost.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+        #             now = time.time()
+        #             future = now + 10
+        #             while time.time() < future:
+        #                 if pygame.sprite.spritecollide(pacman, ghosts_list, False):
+        #                     for i in mass_ghost:
+        #                         if ghost == i:
+        #                             killghost(i)
+        #                     totalscore += 400
+        #                 pinky.image = pygame.image.load("ghosts/ghosts_img/2469744-pinky.png")
+        #                 inky.image = pygame.image.load("ghosts/ghosts_img/2469741-inky.png")
+        #                 blinky.image = pygame.image.load("ghosts/ghosts_img/2469740-blinky.png")
+        #                 clyde.image = pygame.image.load("ghosts/ghosts_img/2469743-clyde.png")
+        #                 pass
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')

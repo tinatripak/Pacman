@@ -69,3 +69,4 @@ class Player(pygame.sprite.Sprite):
             if spawn_sprite_collide:
                 self.rect.left = old_x
                 self.rect.top = old_y
+

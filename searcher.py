@@ -1,9 +1,4 @@
-import pygame
-from point import Point
-import collections
-import queue as Q
-from const import SCREEN_SIZE
-from main import walls_list
+from main import *
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 
@@ -38,6 +33,69 @@ def a_star_s_searcher(player, enemy):
         for i in array_res:
             screen.blit(pygame.image.load("purple.png"), (i.x, i.y))
             pygame.display.flip()
+
+
+def check_location(player):
+    if (player.rect.x < 17) and (259 <= player.rect.y <= 319):
+        player.rect.x = 587
+
+    if (player.rect.x > 587) and (259 <= player.rect.y <= 319):
+        player.rect.x = 17
+
+
+def get_neighbours(_point, speed):
+    top = Point(_point.x, _point.y + speed)
+    bottom = Point(_point.x, _point.y - speed)
+    right = Point(_point.x + speed, _point.y)
+    left = Point(_point.x - speed, _point.y)
+    points = [top, bottom, right, left]
+    result = []
+    for point in points:
+        if check_point(point):
+            result.append(point)
+    return result
+
+
+def get_key_value_neighbours(point, speed):
+    points = get_neighbours(point, speed)
+    key_value = []
+    for item in points:
+        key_value.append([(point.y / 10 + item.x / 7) * 2, item])
+    key_value.sort(key=get_key)
+    return key_value
+
+
+def get_a_search_neighbours(point, speed):
+    points = get_neighbours(point, speed)
+    key_value = []
+    for item in points:
+        if here_isnot_enemy(item):
+            key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
+    key_value.sort(key=get_key)
+    return key_value
+
+
+def get_heuristic_path_length(point, item):
+    return abs(point.x - item.x) + abs(point.y - item.y)
+
+
+def get_key(item):
+    return item[0]
+
+
+def check_point(point):
+    x_def = 13
+    y_def = 11
+    if point.x < 17 or point.x > 559 or point.y < 17 or point.y > 559 \
+            or (229 <= point.y <= 289) and (227 <= point.x <= 347):
+        return False
+    for wall in walls_list:
+        if wall.rect.x - x_def == point.x and wall.rect.y - y_def == point.y:
+            return False
+        if wall.rect.x - x_def <= point.x <= wall.rect.x - x_def + wall.rect.width and \
+                wall.rect.y - y_def <= point.y <= wall.rect.y - y_def + wall.rect.height:
+            return False
+    return True
 
 
 def bfs(start_x, start_y, end_x, end_y):
@@ -156,57 +214,3 @@ def get_form_dict(path, _key):
         if item[0].x == _key.x and item[0].y == _key.y:
             return item[1]
     return None
-
-
-def get_neighbours(_point, speed):
-    top = Point(_point.x, _point.y + speed)
-    bottom = Point(_point.x, _point.y - speed)
-    right = Point(_point.x + speed, _point.y)
-    left = Point(_point.x - speed, _point.y)
-    points = [top, bottom, right, left]
-    result = []
-    for point in points:
-        if check_point(point):
-            result.append(point)
-    return result
-
-
-def get_key_value_neighbours(point, speed):
-    points = get_neighbours(point, speed)
-    key_value = []
-    for item in points:
-        key_value.append([(point.y / 10 + item.x / 7) * 2, item])
-    key_value.sort(key=get_key)
-    return key_value
-
-
-def get_a_search_neighbours(point, speed):
-    points = get_neighbours(point, speed)
-    key_value = []
-    for item in points:
-        key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
-    key_value.sort(key=get_key)
-    return key_value
-
-
-def check_point(point):
-    x_def = 13
-    y_def = 11
-    if point.x <= -13 or point.x >= 600 or point.y <= -13 or point.y >= 600 \
-            or (229 <= point.y <= 289) and (227 <= point.x <= 347):
-        return False
-    for wall in walls_list:
-        if wall.rect.x - x_def == point.x and wall.rect.y - y_def == point.y:
-            return False
-        if wall.rect.x - x_def <= point.x <= wall.rect.x - x_def + wall.rect.width and \
-                wall.rect.y - y_def <= point.y <= wall.rect.y - y_def + wall.rect.height:
-            return False
-    return True
-
-
-def get_heuristic_path_length(point, item):
-    return abs(point.x - item.x) + abs(point.y - item.y)
-
-
-def get_key(item):
-    return item[0]
