@@ -3,7 +3,7 @@ import pygame
 from pygame import *
 from const import black_colour, violet_colour, white_colour, \
     DirectionState, SCREEN_SIZE, path_pacman_img, foundation_map, \
-    AlgorithmType
+    AlgorithmType, FILENAME, header
 from player import Player
 from walls import Walls
 from ghosts import Ghosts
@@ -13,6 +13,9 @@ from point import Point
 import collections
 import time
 import queue as Q
+import csv
+import sys
+import pandas as pd
 
 
 def notepad_to_array(path, array):
@@ -132,9 +135,10 @@ def start_game():
     a_type = AlgorithmType.bfs
     timer_enemy1 = 10
     timer_enemy3 = 10
-    counter = 10
+    counter = 1
     ghostlife = 3
     totalscore = 0
+
 
     sprites_list = pygame.sprite.RenderPlain()
     walls_list = first_map(sprites_list)
@@ -200,7 +204,7 @@ def start_game():
     score = 0
     done = False
     win_score = len(dots_list)
-
+    game_time = time.time()
     random_dot = choose_random_dot()
     pacman_point = random_dot.rect
 
@@ -382,13 +386,23 @@ def start_game():
             mixer.music.play()
             counter -= 1
             if counter == 0:
+                row_contents = ['lose', score, str(round(time.time() - game_time, 5)), 'algorithm']
+                append_list_as_row(FILENAME, row_contents)
                 finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
         if score == win_score:
             start_level += 1
+            row_contents = ['win', score, str(round(time.time() - game_time, 5)), 'algorithm']
+            append_list_as_row(FILENAME, row_contents)
             finish_game("You won!", 180, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
 
         pygame.display.flip()
         clock.tick(10)
+
+
+def append_list_as_row(file_name, list_of_elem):
+    with open(file_name, 'a+', newline='') as write_obj:
+        csv_writer = csv.writer(write_obj)
+        csv_writer.writerow(list_of_elem)
 
 
 def choose_random_dot():
