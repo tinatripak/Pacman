@@ -1,58 +1,21 @@
+import csv
 import pdb
+import random
+
 import pygame
 from pygame import *
-from const import black_colour, violet_colour, white_colour, \
-    DirectionState, SCREEN_SIZE, path_pacman_img, foundation_map, \
-    AlgorithmType, FILENAME, header
-from player import Player
-from walls import Walls
-from ghosts import Ghosts
+
+from const import black_colour, white_colour, DirectionState, SCREEN_SIZE, AlgorithmType, FILENAME
+
+from searcher import bfs_searcher, dfs_searcher, ucs_searcher, a_star_s_searcher
+from movement import move_ghosts, set_direction, pacman
+from map import notepad_to_array, sprites_list, walls_list
+from const import  inky, blinky, pinky, clyde
+
 from dots import Dots
-import random
 from point import Point
-import collections
+from walls import Walls
 import time
-import queue as Q
-import csv
-import sys
-import pandas as pd
-
-
-def notepad_to_array(path, array):
-    with open(path) as f:
-        content = f.read().splitlines()
-        for s in content:
-            temp = []
-            for t in s.split(','):
-                temp.append(int(t))
-            array.append(temp)
-
-
-def generator(f, n, x1, x2, y1, y2, width, height):
-    for i in range(n):
-        number1 = (random.randrange(x1, x2, 30))
-        number2 = (random.randrange(y1, y2, 30))
-        f.writelines(f"{number1},{number2},{width},{height}\n")
-
-
-def create_mapgenerated(f, width, height):
-    generator(f, 4, 30, 364, 30, 150, width, height)
-    generator(f, 2, 370, 580, 30, 180, width, height)
-    generator(f, 2, 60, 240, 242, 305, width, height)
-    generator(f, 2, 370, 520, 242, 305, width, height)
-    generator(f, 3, 30, 260, 380, 420, width, height)
-    generator(f, 3, 300, 580, 450, 580, width, height)
-
-
-def create_many_maps_for_levels(walls):
-    a = f"maps/Map_{start_level}level.txt"
-    f = open(a, 'w')
-    create_mapgenerated(f, 30, 30)
-    create_mapgenerated(f, 40, 15)
-    f.writelines(foundation_map)
-    f.close()
-    notepad_to_array(a, walls)
-
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption('Pac-Man')
@@ -86,21 +49,6 @@ notepad_to_array("ghosts/ghosts_directions/Inky_directions.txt", directions_of_i
 notepad_to_array("ghosts/ghosts_directions/Clyde_directions.txt", directions_of_clyde)
 
 
-def first_map(sprites_list):
-    wall_list = pygame.sprite.RenderPlain()
-    walls = []
-    # x, y, width, height
-    if start_level == 1:
-        notepad_to_array("maps/Map_1level.txt", walls)
-    elif start_level > 1:
-        create_many_maps_for_levels(walls)
-    for i in walls:
-        wall = Walls(i[0], i[1], i[2], i[3], violet_colour)
-        wall_list.add(wall)
-        sprites_list.add(wall)
-    return wall_list
-
-
 def spawn_setup(sprites_list):
     spawn = pygame.sprite.RenderPlain()
     spawn.add(Walls(281, 242, 44, 3, white_colour))
@@ -112,12 +60,9 @@ pygame.init()
 clock = pygame.time.Clock()
 pygame.font.init()
 font = pygame.font.Font("trocchi.ttf", 20)
-pacman_img = pygame.image.load(path_pacman_img)
 
 
 def start_game():
-    global start_level
-    global walls_list
     global dots_list
     global pacman
     global blinky
@@ -128,6 +73,7 @@ def start_game():
     global pinky_point
     global inky_point
     global pacman_point
+    start_level = 1
 
     inky_point = Point(0, 0)
     pacman_point = Point(0, 0)
@@ -136,10 +82,7 @@ def start_game():
     timer_enemy1 = 10
     timer_enemy3 = 10
     counter = 1
-    totalscore = 0
 
-    sprites_list = pygame.sprite.RenderPlain()
-    walls_list = first_map(sprites_list)
     dots_list = pygame.sprite.RenderPlain()
     spawn = spawn_setup(sprites_list)
     ghosts_list = pygame.sprite.RenderPlain()
@@ -147,13 +90,6 @@ def start_game():
 
     blinky_turn = clyde_turn = 0
     blinky_steps = clyde_steps = 0
-
-    pacman = Player(287, 439, path_pacman_img)
-    blinky = Ghosts(287, 199, "ghosts/ghosts_img/2469740-blinky.png")
-    pinky = Ghosts(287, 199, "ghosts/ghosts_img/2469744-pinky.png")
-    inky = Ghosts(227, 199, "ghosts/ghosts_img/2469741-inky.png")
-    clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
-    spawnghost = Point(287, 199)
 
     sprites_list.add(pacman)
     pacman_list.add(pacman)
@@ -251,7 +187,8 @@ def start_game():
             random_dot = choose_random_dot()
             pacman_point = random_dot.rect
 
-        move_ghosts(pacman, random_dot.rect, pacman_point, 30, False, True) # ----------------------------------------------------
+        move_ghosts(pacman, random_dot.rect, pacman_point, 30, False, True)
+        # ---------------------------------------
         pacman.new_position_player(walls_list, spawn)
 
         if not timer_enemy1 == 0:
@@ -357,38 +294,12 @@ def start_game():
             a_star_s_searcher(pacman, inky)
             a_star_s_searcher(pacman, clyde)
             time_algor = str(round(time.time() - start_time, 5))
-        mass_ghost = [pinky, inky, clyde, blinky]
         text = font.render(time_algor + "s", True, (255, 255, 0))
         screen.blit(text, [690, 220])
-        big_dots_list = [[0,0],[0,18],[18,0],[18,18]]
-        #30 * column + 32
-        # if pygame.sprite.spritecollide(pacman, dots_list, False):
-        #     for dot in dots_list:
-        #         if dot.rect.x == 32 and dot.rect.y == 32 or\
-        #                 dot.rect.x == 32 and dot.rect.y == 572 or\
-        #             dot.rect.x == 572 and dot.rect.y == 32 or \
-        #                 dot.rect.x == 572 and dot.rect.y == 572:
-        #             ghost.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
-        #             now = time.time()
-        #             future = now + 10
-        #             while time.time() < future:
-        # for dot in dots_list:
-        #     if dot.rect.width == 8 and dot.rect.height == 8:
-        #         for ghost in ghosts_list:
-        #             ghost.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
-        #             now = time.time()
-        #             future = now + 10
-        #             while time.time() < future:
-        #                 if pygame.sprite.spritecollide(pacman, ghosts_list, False):
-        #                     for i in mass_ghost:
-        #                         if ghost == i:
-        #                             killghost(i)
-        #                     totalscore += 400
-        #                 pinky.image = pygame.image.load("ghosts/ghosts_img/2469744-pinky.png")
-        #                 inky.image = pygame.image.load("ghosts/ghosts_img/2469741-inky.png")
-        #                 blinky.image = pygame.image.load("ghosts/ghosts_img/2469740-blinky.png")
-        #                 clyde.image = pygame.image.load("ghosts/ghosts_img/2469743-clyde.png")
-        #                 pass
+
+        mass_ghost = [pinky, inky, clyde, blinky]
+        big_dots_list = [[0, 0], [0, 18], [18, 0], [18, 18]]
+        # 30 * column + 32
 
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
             mixer.music.load('music/pacman_death.wav')
@@ -425,86 +336,9 @@ def choose_random_dot():
 
 
 def killghost(ghost):
-    ghost.lesslive()
-    ghost.rect = spawnghost
-
-
-def move_ghosts(ghost, point, ghost_point, speed, is_bfs=True, is_pacman=False):
-    if is_bfs:
-        array_res = bfs(point.x, point.y, ghost.rect.x, ghost.rect.y)
-    else:
-        array_res = astar_search(point.x, point.y, ghost.rect.x, ghost.rect.y)
-    if array_res is not None:
-        i = 0
-        point = array_res[i]
-        if len(array_res) > i + 1:
-            ghost_point = array_res[i + 1]
-        while point.x == ghost.rect.x and point.y == ghost.rect.y:
-            i += 1
-            point = array_res[i]
-            if len(array_res) > i + 1:
-                ghost_point = array_res[i + 1]
-    else:
-        point = ghost_point
-    if point.y < ghost.rect.y and check_point(Point(ghost.rect.x, ghost.rect.y - speed)):
-        if is_pacman:
-            pacman.image = set_direction(DirectionState.up.name)
-        ghost.rect.move_ip(0, -speed)
-    elif point.y > ghost.rect.y and check_point(Point(ghost.rect.x, ghost.rect.y + speed)):
-        if is_pacman:
-            pacman.image = set_direction(DirectionState.down.name)
-        ghost.rect.move_ip(0, speed)
-    elif point.x < ghost.rect.x and check_point(Point(ghost.rect.x - speed, ghost.rect.y)):
-        if is_pacman:
-            pacman.image = set_direction(DirectionState.left.name)
-        ghost.rect.move_ip(-speed, 0)
-    elif point.x > ghost.rect.x and check_point(Point(ghost.rect.x + speed, ghost.rect.y)):
-        if is_pacman:
-            pacman.image = set_direction(DirectionState.right.name)
-        ghost.rect.move_ip(speed, 0)
-
-
-def bfs_searcher(player, enemy):
-    array_res = bfs(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
-    if array_res is not None:
-        for i in array_res:
-            screen.blit(pygame.image.load("blue.png"), (i.x, i.y))
-            pygame.display.flip()
-
-
-def dfs_searcher(player, enemy):
-    array_res = dfs(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
-    if array_res is not None:
-        for i in array_res:
-            screen.blit(pygame.image.load("pink.png"), (i.x, i.y))
-            pygame.display.flip()
-
-
-def ucs_searcher(player, enemy):
-    array_res = ucs(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
-    if array_res is not None:
-        for i in array_res:
-            screen.blit(pygame.image.load("yellow.png"), (i.x, i.y))
-            pygame.display.flip()
-
-
-def a_star_s_searcher(player, enemy):
-    array_res = astar_search(player.rect.x, player.rect.y, enemy.rect.x, enemy.rect.y)
-    if array_res is not None:
-        for i in array_res:
-            screen.blit(pygame.image.load("purple.png"), (i.x, i.y))
-            pygame.display.flip()
-
-
-def set_direction(direction):
-    if direction == "right":
-        return pacman_img
-    if direction == "up":
-        return pygame.transform.rotate(pacman_img, 90)
-    if direction == "left":
-        return pygame.transform.rotate(pacman_img, 180)
-    if direction == "down":
-        return pygame.transform.rotate(pacman_img, 270)
+    # ghost.rect = spawnghost
+    ghost.rect.x = 287
+    ghost.rect.x = 199
 
 
 def check_location(player):
@@ -550,191 +384,6 @@ def finish_game(message, left, sprites_list, dots_list, ghosts_list, pacman_list
 
         pygame.display.flip()
         clock.tick(10)
-
-
-def get_neighbours(_point, speed):
-    top = Point(_point.x, _point.y + speed)
-    bottom = Point(_point.x, _point.y - speed)
-    right = Point(_point.x + speed, _point.y)
-    left = Point(_point.x - speed, _point.y)
-    points = [top, bottom, right, left]
-    result = []
-    for point in points:
-        if check_point(point):
-            result.append(point)
-    return result
-
-
-def get_key_value_neighbours(point, speed):
-    points = get_neighbours(point, speed)
-    key_value = []
-    for item in points:
-        key_value.append([(point.y / 10 + item.x / 7) * 2, item])
-    key_value.sort(key=get_key)
-    return key_value
-
-
-def get_a_search_neighbours(point, speed):
-    points = get_neighbours(point, speed)
-    key_value = []
-    for item in points:
-        if here_isnot_enemy(item):
-            key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
-    key_value.sort(key=get_key)
-    return key_value
-
-
-def here_isnot_enemy(point):
-    if point.x == blinky.rect.x and point.y == blinky.rect.y:
-        return False
-    if point.x == pinky.rect.x and point.y == pinky.rect.y:
-        return False
-    if point.x == inky.rect.x and point.y == inky.rect.y:
-        return False
-    if point.x == clyde.rect.x and point.y == clyde.rect.y:
-        return False
-    return True
-
-
-def get_heuristic_path_length(point, item):
-    return abs(point.x - item.x) + abs(point.y - item.y)
-
-
-def get_key(item):
-    return item[0]
-
-
-def check_point(point):
-    x_def = 13
-    y_def = 11
-    if point.x < 17 or point.x > 559 or point.y < 17 or point.y > 559 \
-            or (229 <= point.y <= 289) and (227 <= point.x <= 347):
-        return False
-    for wall in walls_list:
-        if wall.rect.x - x_def == point.x and wall.rect.y - y_def == point.y:
-            return False
-        if wall.rect.x - x_def <= point.x <= wall.rect.x - x_def + wall.rect.width and \
-                wall.rect.y - y_def <= point.y <= wall.rect.y - y_def + wall.rect.height:
-            return False
-    return True
-
-
-def bfs(start_x, start_y, end_x, end_y):
-    start = Point(start_x, start_y)
-    end = Point(end_x, end_y)
-    visited, queue = set(), collections.deque([start])
-    visited.add(start)
-    path = {start: None}
-    while len(queue) > 0:
-        vertex = queue.popleft()
-
-        for neighbour in get_neighbours(vertex, 30):
-            if not contains_point(neighbour, visited):
-                visited.add(neighbour)
-                if not contains_point(neighbour, queue):
-                    queue.append(neighbour)
-                    path[neighbour] = vertex
-
-            if neighbour.x == end.x and neighbour.y == end.y:
-                return get_path(path, end)
-
-
-def dfs(start_x, start_y, end_x, end_y):
-    start = Point(start_x, start_y)
-    end = Point(end_x, end_y)
-    visited, queue = set(), collections.deque([start])
-    visited.add(start)
-    path = {start: None}
-    while len(queue) > 0:
-        vertex = queue.pop()
-
-        for neighbour in get_neighbours(vertex, 30):
-            if not contains_point(neighbour, visited):
-                visited.add(neighbour)
-                if not contains_point(neighbour, queue):
-                    queue.append(neighbour)
-                    path[neighbour] = vertex
-
-            if neighbour.x == end.x and neighbour.y == end.y:
-                return get_path(path, end)
-
-
-def ucs(start_x, start_y, end_x, end_y):
-    start = Point(start_x, start_y)
-    end = Point(end_x, end_y)
-
-    visited = [start]
-    queue = Q.PriorityQueue()
-    queue.put((0, start))
-    path = {start: None}
-
-    while not queue.empty():
-        vertex_temp = queue.get()
-        vertex = vertex_temp[len(vertex_temp) - 1]
-
-        for neighbour in get_key_value_neighbours(vertex, 30):
-            if not contains_point(neighbour[1], visited):
-                visited.append(neighbour[1])
-                if neighbour not in (x for x in queue.queue):
-                    queue.put((neighbour[0], neighbour[1]))
-                    path[neighbour[1]] = vertex
-
-            if neighbour[1].x == end.x and neighbour[1].y == end.y:
-                return get_path(path, end)
-
-
-def heuristic(from_, to):
-    return abs(from_.x - to.x) + abs(from_.y - to.y)
-
-
-def astar_search(start_x, start_y, end_x, end_y):
-    start = Point(start_x, start_y)
-    end = Point(end_x, end_y)
-
-    visited = [start]
-    queue = Q.PriorityQueue()
-    queue.put((0, start))
-    path = {start: None}
-
-    while not queue.empty():
-        vertex_temp = queue.get()
-        vertex = vertex_temp[len(vertex_temp) - 1]
-
-        for neighbour in get_a_search_neighbours(vertex, 30):
-            if not contains_point(neighbour[1], visited):
-                visited.append(neighbour[1])
-                if neighbour not in (x for x in queue.queue):
-                    queue.put((neighbour[0], neighbour[1]))
-                    path[neighbour[1]] = vertex
-
-            if neighbour[1].x == end.x and neighbour[1].y == end.y:
-                return get_path(path, end)
-
-
-def get_path(path, end):
-    result = []
-    point = end
-    result.append(point)
-    dict_value = get_form_dict(path, point)
-    while dict_value is not None:
-        result.append(dict_value)
-        point = dict_value
-        dict_value = get_form_dict(path, point)
-    return result
-
-
-def contains_point(point, array):
-    for item in array:
-        if item.x == point.x and item.y == point.y:
-            return True
-    return False
-
-
-def get_form_dict(path, _key):
-    for item in path.items():
-        if item[0].x == _key.x and item[0].y == _key.y:
-            return item[1]
-    return None
 
 
 start_level = 1
