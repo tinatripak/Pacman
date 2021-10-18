@@ -1,12 +1,24 @@
 from enum import Enum
+import pygame
+from player import Player
+from ghosts import Ghosts
+from point import Point
 
 
+start_level = 1
 SCREEN_SIZE = (900, 604)
 
 black_colour = (0, 0, 0)
 white_colour = (255, 255, 255)
 violet_colour = (66, 49, 137)
 path_pacman_img = "player/pacman.png"
+pacman_img = pygame.image.load(path_pacman_img)
+pacman = Player(287, 439, path_pacman_img)
+blinky = Ghosts(287, 199, "ghosts/ghosts_img/2469740-blinky.png")
+pinky = Ghosts(287, 199, "ghosts/ghosts_img/2469744-pinky.png")
+inky = Ghosts(227, 199, "ghosts/ghosts_img/2469741-inky.png")
+clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
+spawnghost = Point(287, 199)
 FILENAME = "results.csv"
 header = ["Status game", "Score", "Time", "Algorithm"]
 foundation_map = ("0,0,6,200\n"
