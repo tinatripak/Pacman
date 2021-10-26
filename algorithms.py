@@ -3,7 +3,7 @@ import collections
 from neighbours import get_neighbours, get_key_value_neighbours, get_a_search_neighbours
 from algorithmshelpers import contains_point, get_path
 import queue as Q
-
+from const import speed
 
 def bfs(start_x, start_y, end_x, end_y):
     start = Point(start_x, start_y)
@@ -14,7 +14,7 @@ def bfs(start_x, start_y, end_x, end_y):
     while len(queue) > 0:
         vertex = queue.popleft()
 
-        for neighbour in get_neighbours(vertex, 30):
+        for neighbour in get_neighbours(vertex, speed):
             if not contains_point(neighbour, visited):
                 visited.add(neighbour)
                 if not contains_point(neighbour, queue):
@@ -82,7 +82,7 @@ def astar_search(start_x, start_y, end_x, end_y):
         vertex_temp = queue.get()
         vertex = vertex_temp[len(vertex_temp) - 1]
 
-        for neighbour in get_a_search_neighbours(vertex, 30):
+        for neighbour in get_a_search_neighbours(vertex, speed):
             if not contains_point(neighbour[1], visited):
                 visited.append(neighbour[1])
                 if neighbour not in (x for x in queue.queue):

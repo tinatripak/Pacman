@@ -16,6 +16,7 @@ from dots import Dots
 from point import Point
 from walls import Walls
 import time
+import math
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption('Pac-Man')
@@ -37,6 +38,7 @@ def start_music():
                 key_pressed = True
 
 
+graph = {}
 start_music()
 
 directions_of_pinky = []
@@ -62,6 +64,18 @@ pygame.font.init()
 font = pygame.font.Font("trocchi.ttf", 20)
 
 
+def create_reqursive_graph():
+    for item in self.road_blocks:
+        if not isinstance(item, NullRoad) and not isinstance(item, GhostBlock):
+            self.graph[item] = {}
+            for direction in item.directions.values():
+                if not isinstance(direction, NullRoad) and not isinstance(direction, GhostBlock):
+                    if isinstance(item, PortalBlock) and isinstance(direction, PortalBlock):
+                        self.graph[item][direction] = 0
+                    else:
+                        self.graph[item][direction] = \
+                            (item.position - direction.position).magnitude_squared()
+
 def start_game():
     global dots_list
     global pacman
@@ -73,8 +87,12 @@ def start_game():
     global pinky_point
     global inky_point
     global pacman_point
-    start_level = 1
 
+
+    start_level = 1
+    totalscore = 0
+    is_time_to_kill_ghost = False
+    time_to_kill = -1
     inky_point = Point(0, 0)
     pacman_point = Point(0, 0)
     pinky_point = Point(0, 0)
@@ -191,13 +209,13 @@ def start_game():
         # ---------------------------------------
         pacman.new_position_player(walls_list, spawn)
 
-        if not timer_enemy1 == 0:
-            timer_enemy1 -= 1
-        else:
-            timer_enemy1 = 2
-            move_ghosts(inky, pacman.rect, inky_point, 30)
+        # if not timer_enemy1 == 0:
+        #     timer_enemy1 -= 1
+        # else:
+        #     timer_enemy1 = 2
+            #move_ghosts(inky, pacman.rect, inky_point, 30)
 
-        inky.new_position_player(walls_list, False)
+        #inky.new_position_player(walls_list, False)
 
         changed_speed_clyde = clyde.change_speed_ghost(directions_of_clyde, False, clyde_turn, clyde_steps,
                                                        len(directions_of_clyde) - 1)
@@ -233,6 +251,57 @@ def start_game():
         check_location(blinky)
 
         pacman_collides_dots = pygame.sprite.spritecollide(pacman, dots_list, True)
+
+        if pacman_collides_dots:
+            for dot in dots_list:
+                if dot.rect.height == 8 and dot.rect.width == 8 \
+                        and ((pacman.rect.x == 17 and pacman.rect.y == 19) or
+                             (pacman.rect.x == 17 and pacman.rect.y == 559) or
+                             (pacman.rect.x == 557 and pacman.rect.y == 19) or
+                             (pacman.rect.x == 557 and pacman.rect.y == 559)):
+
+                    # 17 + 30*18, 17 + 30*0, 19 + 30*0, 19 + 30*18
+                    is_time_to_kill_ghost = True
+                    time_to_kill = 50
+                    # distance1 = math.hypot(abs(pacman.rect.x - inky.rect.x), abs(pacman.rect.y - inky.rect.y))
+                    # distance2 = math.hypot(abs(pacman.rect.x - blinky.rect.x), abs(pacman.rect.y - blinky.rect.y))
+                    # distance3 = math.hypot(abs(pacman.rect.x - pinky.rect.x), abs(pacman.rect.y - pinky.rect.y))
+                    # distance4 = math.hypot(abs(pacman.rect.x - clyde.rect.x), abs(pacman.rect.y - clyde.rect.y))
+                    # mass_distance = [distance1, distance2, distance3, distance4]
+                    # mindistance = my_min(mass_distance)
+                    # if mindistance == distance1:
+                    #     move_ghosts(pacman, inky.rect, pacman_point, 30, True, True)
+                    #     pacman.new_position_player(walls_list, spawn)
+                    # if mindistance == distance2:
+                    #     move_ghosts(pacman, blinky.rect, pacman_point, 30, True, True)
+                    #     pacman.new_position_player(walls_list, spawn)
+                    # if mindistance == distance3:
+                    #     move_ghosts(pacman, pinky.rect, pacman_point, 30, True, True)
+                    #     pacman.new_position_player(walls_list, spawn)
+                    # if mindistance == distance4:
+                    #     move_ghosts(pacman, clyde.rect, pacman_point, 30, True, True)
+                    #     pacman.new_position_player(walls_list, spawn)
+                    # --------------------------------------------------------------------------------------------------------------------------------------------------
+                    # move_ghosts(pacman, Point(227, 199), pacman_point,30,True,True)
+                    move_ghosts(pacman, inky.rect, pacman_point, 30, True, True)
+                    pacman.new_position_player(walls_list, spawn)
+                    pinky.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+                    inky.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+                    blinky.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+                    clyde.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
+
+        if time_to_kill > 0:
+            time_to_kill -= 1
+        elif time_to_kill == 0:
+            time_to_kill = -1
+            is_time_to_kill_ghost = False
+            pinky.image = pygame.image.load("ghosts/ghosts_img/2469744-pinky.png")
+            inky.image = pygame.image.load("ghosts/ghosts_img/2469741-inky.png")
+            blinky.image = pygame.image.load("ghosts/ghosts_img/2469740-blinky.png")
+            clyde.image = pygame.image.load("ghosts/ghosts_img/2469743-clyde.png")
+            move_ghosts(pacman, random_dot.rect, pacman_point, 30, False, True)
+            pacman.new_position_player(walls_list, spawn)
+
         if pacman_collides_dots:
 
             if len(pacman_collides_dots) > 0:
@@ -297,18 +366,20 @@ def start_game():
         text = font.render(time_algor + "s", True, (255, 255, 0))
         screen.blit(text, [690, 220])
 
-        mass_ghost = [pinky, inky, clyde, blinky]
-        big_dots_list = [[0, 0], [0, 18], [18, 0], [18, 18]]
-        # 30 * column + 32
-
         if pygame.sprite.spritecollide(pacman, ghosts_list, False):
-            mixer.music.load('music/pacman_death.wav')
-            mixer.music.play()
-            counter -= 1
-            if counter == 0:
-                row_contents = ['lose', score, str(round(time.time() - game_time, 5)), 'algorithm']
-                append_list_as_row(FILENAME, row_contents)
-                finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
+            if is_time_to_kill_ghost:
+                for ghost in ghosts_list:
+                    if pacman.rect.x == ghost.rect.x and pacman.rect.y == ghost.rect.y:
+                        killghost(ghost)
+                        totalscore += 400
+            else:
+                mixer.music.load('music/pacman_death.wav')
+                mixer.music.play()
+                counter -= 1
+                if counter == 0:
+                    row_contents = ['lose', score, str(round(time.time() - game_time, 5)), 'algorithm']
+                    append_list_as_row(FILENAME, row_contents)
+                    finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
         if score == win_score:
             start_level += 1
             row_contents = ['win', score, str(round(time.time() - game_time, 5)), 'algorithm']
@@ -323,6 +394,14 @@ def append_list_as_row(file_name, list_of_elem):
     with open(file_name, 'a+', newline='') as write_obj:
         csv_writer = csv.writer(write_obj)
         csv_writer.writerow(list_of_elem)
+
+
+def my_min(sequence):
+    low = sequence[0]
+    for i in sequence:
+        if i < low:
+            low = i
+    return low
 
 
 def choose_random_dot():

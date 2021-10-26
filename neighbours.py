@@ -1,6 +1,8 @@
 from point import Point
 from algorithmshelpers import check_point, get_key, here_isnot_enemy, get_heuristic_path_length
 
+visited_points = []
+
 
 def get_neighbours(_point, speed):
     top = Point(_point.x, _point.y + speed)
@@ -8,11 +10,21 @@ def get_neighbours(_point, speed):
     right = Point(_point.x + speed, _point.y)
     left = Point(_point.x - speed, _point.y)
     points = [top, bottom, right, left]
-    result = []
     for point in points:
         if check_point(point):
-            result.append(point)
-    return result
+            yield point
+
+
+def get_neighbours_and_save(_point, speed):
+    top = Point(_point.x, _point.y + speed)
+    bottom = Point(_point.x, _point.y - speed)
+    right = Point(_point.x + speed, _point.y)
+    left = Point(_point.x - speed, _point.y)
+    points = [top, bottom, right, left]
+    for point in points:
+        if not visited_points.__contains__(_point) and check_point(point):
+            visited_points.append(point)
+            yield point
 
 
 def get_key_value_neighbours(point, speed):

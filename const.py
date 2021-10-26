@@ -6,6 +6,7 @@ from point import Point
 
 
 start_level = 1
+
 SCREEN_SIZE = (900, 604)
 
 black_colour = (0, 0, 0)
@@ -19,6 +20,7 @@ pinky = Ghosts(287, 199, "ghosts/ghosts_img/2469744-pinky.png")
 inky = Ghosts(227, 199, "ghosts/ghosts_img/2469741-inky.png")
 clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
 spawnghost = Point(287, 199)
+speed = 30
 FILENAME = "results.csv"
 header = ["Status game", "Score", "Time", "Algorithm"]
 foundation_map = ("0,0,6,200\n"
@@ -36,6 +38,11 @@ foundation_map = ("0,0,6,200\n"
                   "364,242,2,63\n"
                   "540,200,63,50\n"
                   "540,350,63,50\n")
+
+
+def get_enemies_coordinates():
+    enemies = [blinky.rect, inky.rect, pinky.rect, clyde.rect]
+    return enemies
 
 
 class DirectionState(Enum):
