@@ -1,4 +1,4 @@
-from algorithms import bfs, astar_search, dfs
+from algorithms import bfs, astar_search, dfs, badastar_search
 from algorithmshelpers import check_point
 from point import Point
 from const import DirectionState, pacman_img, pacman
@@ -10,9 +10,8 @@ def move_ghosts(ghost, point, ghost_point, speed, is_bfs=True, is_pacman=False):
     if is_bfs:
         array_res = bfs(point.x, point.y, ghost.rect.x, ghost.rect.y)
     else:
-        # array_res = astar_search(point.x, point.y, ghost.rect.x, ghost.rect.y)
-        array_res = move_by_alorithm(point, ghost)
-
+        array_res = astar_search(point.x, point.y, ghost.rect.x, ghost.rect.y)
+        # array_res = move_by_alorithm(point, ghost)
     if array_res is not None:
         i = 0
         point = array_res[i]

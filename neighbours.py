@@ -44,3 +44,13 @@ def get_a_search_neighbours(point, speed):
             key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
     key_value.sort(key=get_key)
     return key_value
+
+
+def get_a_search_neighbourssecond(point, speed):
+    points = get_neighbours(point, speed)
+    key_value = []
+    for item in points:
+        if not here_isnot_enemy(item):
+            key_value.append([(point.y / 10 + item.x / 7) * 2 + get_heuristic_path_length(point, item), item])
+    key_value.sort(key=get_key)
+    return key_value

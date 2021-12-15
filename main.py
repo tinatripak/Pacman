@@ -5,7 +5,7 @@ import random
 import pygame
 from pygame import *
 
-from const import black_colour, white_colour, DirectionState, SCREEN_SIZE, AlgorithmType, FILENAME
+from const import black_colour, white_colour, DirectionState, SCREEN_SIZE, AlgorithmType, FILENAME, header
 
 from searcher import bfs_searcher, dfs_searcher, ucs_searcher, a_star_s_searcher
 from movement import move_ghosts, set_direction, pacman
@@ -17,7 +17,9 @@ from point import Point
 from walls import Walls
 import time
 import math
+from agent import *
 
+agent = Agent()
 screen = pygame.display.set_mode(SCREEN_SIZE)
 pygame.display.set_caption('Pac-Man')
 board = pygame.image.load("pacman_startgame.png")
@@ -25,6 +27,12 @@ board1 = board.get_rect(
     bottomright=(800, 500))
 screen.blit(board, board1)
 pygame.display.update()
+
+
+def get_state():
+    image = skimage.color.rgb2gray(pygame.surfarray.array3d(pygame.display.get_surface()))
+    image = skimage.transform.resize(image, (28, 30))
+    return np.array(image).flatten()
 
 
 def start_music():
@@ -99,7 +107,8 @@ def start_game():
     a_type = AlgorithmType.bfs
     timer_enemy1 = 10
     timer_enemy3 = 10
-    counter = 1
+    counter = random.randint(1, 10)
+    lives_file = counter
 
     dots_list = pygame.sprite.RenderPlain()
     spawn = spawn_setup(sprites_list)
@@ -260,30 +269,9 @@ def start_game():
                              (pacman.rect.x == 557 and pacman.rect.y == 19) or
                              (pacman.rect.x == 557 and pacman.rect.y == 559)):
 
-                    # 17 + 30*18, 17 + 30*0, 19 + 30*0, 19 + 30*18
                     is_time_to_kill_ghost = True
                     time_to_kill = 50
-                    # distance1 = math.hypot(abs(pacman.rect.x - inky.rect.x), abs(pacman.rect.y - inky.rect.y))
-                    # distance2 = math.hypot(abs(pacman.rect.x - blinky.rect.x), abs(pacman.rect.y - blinky.rect.y))
-                    # distance3 = math.hypot(abs(pacman.rect.x - pinky.rect.x), abs(pacman.rect.y - pinky.rect.y))
-                    # distance4 = math.hypot(abs(pacman.rect.x - clyde.rect.x), abs(pacman.rect.y - clyde.rect.y))
-                    # mass_distance = [distance1, distance2, distance3, distance4]
-                    # mindistance = my_min(mass_distance)
-                    # if mindistance == distance1:
-                    #     move_ghosts(pacman, inky.rect, pacman_point, 30, True, True)
-                    #     pacman.new_position_player(walls_list, spawn)
-                    # if mindistance == distance2:
-                    #     move_ghosts(pacman, blinky.rect, pacman_point, 30, True, True)
-                    #     pacman.new_position_player(walls_list, spawn)
-                    # if mindistance == distance3:
-                    #     move_ghosts(pacman, pinky.rect, pacman_point, 30, True, True)
-                    #     pacman.new_position_player(walls_list, spawn)
-                    # if mindistance == distance4:
-                    #     move_ghosts(pacman, clyde.rect, pacman_point, 30, True, True)
-                    #     pacman.new_position_player(walls_list, spawn)
-                    # --------------------------------------------------------------------------------------------------------------------------------------------------
-                    # move_ghosts(pacman, Point(227, 199), pacman_point,30,True,True)
-                    move_ghosts(pacman, inky.rect, pacman_point, 30, True, True)
+                    move_ghosts(pacman, inky.rect, pacman_point, 30)
                     pacman.new_position_player(walls_list, spawn)
                     pinky.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
                     inky.image = pygame.image.load("ghosts/ghosts_img/vulnerable.png")
@@ -377,12 +365,12 @@ def start_game():
                 mixer.music.play()
                 counter -= 1
                 if counter == 0:
-                    row_contents = ['lose', score, str(round(time.time() - game_time, 5)), 'algorithm']
+                    row_contents = ['0', str(round(time.time() - game_time, 5)), score, lives_file]
                     append_list_as_row(FILENAME, row_contents)
                     finish_game(f"You lose!", 235, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
-        if score == win_score:
+        if score == 100:
             start_level += 1
-            row_contents = ['win', score, str(round(time.time() - game_time, 5)), 'algorithm']
+            row_contents = ['1', str(round(time.time() - game_time, 5)), score, lives_file]
             append_list_as_row(FILENAME, row_contents)
             finish_game("You won!", 180, sprites_list, dots_list, ghosts_list, pacman_list, walls_list, spawn)
 
@@ -393,6 +381,7 @@ def start_game():
 def append_list_as_row(file_name, list_of_elem):
     with open(file_name, 'a+', newline='') as write_obj:
         csv_writer = csv.writer(write_obj)
+        #scsv_writer.writerow(header)
         csv_writer.writerow(list_of_elem)
 
 

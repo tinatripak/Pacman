@@ -21,8 +21,8 @@ inky = Ghosts(227, 199, "ghosts/ghosts_img/2469741-inky.png")
 clyde = Ghosts(287, 199, "ghosts/ghosts_img/2469743-clyde.png")
 spawnghost = Point(287, 199)
 speed = 30
-FILENAME = "results.csv"
-header = ["Status game", "Score", "Time", "Algorithm"]
+FILENAME = "lispresults.csv"
+header = ['Status game', 'Time', 'Score', 'Lives']
 foundation_map = ("0,0,6,200\n"
                   "0,400,6,200\n"
                   "600,0,6,250\n"
